@@ -37,8 +37,6 @@ VM_PUBLIC_KEY=$(cat /etc/wireguard/publickey)
 if [[ -n "$VM_PUBLIC_KEY" ]]; then
     az keyvault secret set --vault-name "$KEYVAULT_NAME" --name "${VM_NAME}-publickey" --value "$VM_PUBLIC_KEY"
     echo "Stored VM public key in Key Vault."
-else
-    echo "VM public key is empty, not storing in Key Vault."
 fi
 
 # Pause for user input before continuing
@@ -53,9 +51,9 @@ if [[ -n "$REMOTE_SERVER_PUBLIC_KEY" ]]; then
 fi
 
 # Try to get the server public key from Key Vault
-REMOTE_SERVER=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name 'remoteserver' --query value -o tsv 2>/dev/null || echo "")
-if [[ -n "$REMOTE_SERVER" ]]; then
-    echo "$REMOTE_SERVER" 
+REMOTE_ROUTER=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name 'remoterouter' --query value -o tsv 2>/dev/null || echo "")
+if [[ -n "$REMOTE_ROUTER" ]]; then
+    echo "$REMOTE_ROUTER" 
 else
     echo "No remote server found in Key Vault."
 fi
@@ -76,7 +74,7 @@ PostDown = sysctl -w net.ipv4.ip_forward=0
 
 [Peer]
 PublicKey = $(cat /etc/wireguard/remoteserverpublickey 2>/dev/null || echo "PLACEHOLDER")
-Endpoint = $($REMOTE_SERVER 2>/dev/null || echo "PLACEHOLDER")
+Endpoint = $($REMOTE_ROUTER 2>/dev/null || echo "PLACEHOLDER")
 AllowedIPs = 192.168.1.0/24
 PersistentKeepalive = 25
 EOF"
