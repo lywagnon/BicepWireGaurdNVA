@@ -105,15 +105,18 @@ sudo bash -c "cat > $CRON_SCRIPT << 'EOS'
 #!/bin/bash
 KEYVAULT_NAME=\"$KEYVAULT_NAME\"
 SERVER_PUBLIC_KEY=\$(az keyvault secret show --vault-name \"\$KEYVAULT_NAME\" --name 'remoteserverpublickey' --query value -o tsv 2>/dev/null || echo \"\")
-if [[ -n "$SERVER_PUBLIC_KEY" ]]; then
-    CURRENT_KEY_FILE="/etc/wireguard/remoteserverpublickey"
-    if [[ ! -f "$CURRENT_KEY_FILE" ]] || [[ "$SERVER_PUBLIC_KEY" != "$(cat $CURRENT_KEY_FILE)" ]]; then
-        echo "$SERVER_PUBLIC_KEY" | sudo tee "$CURRENT_KEY_FILE" > /dev/null
+if [[ -n \"\$SERVER_PUBLIC_KEY\" ]]; then
+    CURRENT_KEY_FILE=\"/etc/wireguard/remoteserverpublickey\"
+    if [[ ! -f \"\$CURRENT_KEY_FILE\" ]] || [[ \"\$SERVER_PUBLIC_KEY\" != \"\$(cat \$CURRENT_KEY_FILE)\" ]]; then
+        echo \"\$SERVER_PUBLIC_KEY\" | sudo tee \"\$CURRENT_KEY_FILE\" > /dev/null
         sudo systemctl restart wg-quick@wg0
     fi
 fi
 EOS"
+
+# Make the script executable
 sudo chmod +x $CRON_SCRIPT
+
 # Add cron job to run every 15 minutes
 ( sudo crontab -l 2>/dev/null; echo "*/15 * * * * $CRON_SCRIPT" ) | sudo crontab -
 
