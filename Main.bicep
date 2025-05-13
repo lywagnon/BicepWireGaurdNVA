@@ -43,7 +43,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' existing = {
 }
 
 @description('Name of the Key Vault secret containing the user1 objectId')
-param user1ObjectIdSecretName string = 'user1ObjectId'
+param user1ObjectIdSecretName string = 'user1ObjectIdsecret'
 
 resource user1ObjectIdSecret 'Microsoft.KeyVault/vaults/secrets@2023-02-01' existing = {
   parent: keyVault
