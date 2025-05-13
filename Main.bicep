@@ -38,7 +38,7 @@ var ubuntuImage = {
 param adminPassword string = newGuid()
 
 // Generate a Key Vault name with a random 4-character alphanumeric suffix
-var keyVaultName = '${take(keyVaultBaseName, 18)}${uniqueString(resourceGroup().id, keyVaultBaseName)}'
+var keyVaultName = take(uniqueString(resourceGroup().id, keyVaultBaseName), 23)
 
 resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' = {
   name: keyVaultName
