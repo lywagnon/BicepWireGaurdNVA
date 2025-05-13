@@ -32,8 +32,8 @@ echo "VM Name: $VM_NAME"
 echo "Resource Group: $RESOURCE_GROUP"
 echo "Key Vault Name: $KEYVAULT_NAME"
 
-# Store the public key in AVM_PUBLIC_KEY=$(cat /etc/wireguard/publickey)
-zure Key Vault
+# Store the public key in Azure Key Vault
+VM_PUBLIC_KEY=$(cat /etc/wireguard/publickey)
 if [[ -n "$VM_PUBLIC_KEY" ]]; then
     az keyvault secret set --vault-name "$KEYVAULT_NAME" --name "${VM_NAME}-publickey" --value "$VM_PUBLIC_KEY"
     echo "Stored VM public key in Key Vault."
