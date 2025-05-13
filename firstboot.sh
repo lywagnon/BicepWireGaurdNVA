@@ -32,16 +32,17 @@ echo "VM Name: $VM_NAME"
 echo "Resource Group: $RESOURCE_GROUP"
 echo "Key Vault Name: $KEYVAULT_NAME"
 
-# Store the public key in Azure Key Vault
-VM_PUBLIC_KEY=$(cat /etc/wireguard/publickey)
+# Store the public key in AVM_PUBLIC_KEY=$(cat /etc/wireguard/publickey)
+zure Key Vault
 if [[ -n "$VM_PUBLIC_KEY" ]]; then
     az keyvault secret set --vault-name "$KEYVAULT_NAME" --name "${VM_NAME}-publickey" --value "$VM_PUBLIC_KEY"
     echo "Stored VM public key in Key Vault."
 else
     echo "VM public key is empty, not storing in Key Vault."
 fi
+
 # Pause for user input before continuing
-read -p "Press Enter to continue..."
+read -p "Stored VM public key in Key Vault. Press Enter to continue..."
 
 # Try to get the server public key from Key Vault
 REMOTE_SERVER_PUBLIC_KEY=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name 'remoteserverpublickey' --query value -o tsv 2>/dev/null || echo "")
@@ -58,7 +59,7 @@ if [[ -n "$REMOTE_SERVER" ]]; then
 fi
 
 # Pause for user input before continuing
-read -p "Press Enter to continue..."
+read -p "finished getting remote secrets"
 
 # Create WireGuard configuration file
 echo "Creating WireGuard configuration file..."

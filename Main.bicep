@@ -186,7 +186,7 @@ resource vmExtension 'Microsoft.Compute/virtualMachines/extensions@2023-03-01' =
       fileUris: [
         'https://raw.githubusercontent.com/MicrosoftAzureAaron/BicepWireGaurdNVA/main/firstboot.sh'
       ]
-      commandToExecute: 'bash firstboot.sh'
+      commandToExecute: 'sudo bash firstboot.sh'
     }
   }
 }

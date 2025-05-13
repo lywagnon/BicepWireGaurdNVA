@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "14392647526144023119"
+      "templateHash": "7619278172469286299"
     }
   },
   "parameters": {
@@ -172,7 +172,7 @@
           "fileUris": [
             "https://raw.githubusercontent.com/MicrosoftAzureAaron/BicepWireGaurdNVA/main/firstboot.sh"
           ],
-          "commandToExecute": "bash firstboot.sh"
+          "commandToExecute": "sudo bash firstboot.sh"
         }
       },
       "dependsOn": [
