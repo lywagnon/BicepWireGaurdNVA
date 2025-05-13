@@ -74,7 +74,7 @@ PostDown = sysctl -w net.ipv4.ip_forward=0
 
 [Peer]
 PublicKey = $(cat /etc/wireguard/remoteserverpublickey 2>/dev/null || echo "PLACEHOLDER")
-Endpoint = $($REMOTE_ROUTER 2>/dev/null || echo "PLACEHOLDER")
+Endpoint = ${REMOTE_ROUTER:-PLACEHOLDER}
 AllowedIPs = 192.168.1.0/24
 PersistentKeepalive = 25
 EOF"
@@ -82,10 +82,10 @@ EOF"
 # Set permissions
 sudo chmod 600 /etc/wireguard/wg0.conf
 
-# # Enable and start WireGuard
-# echo "Enabling and starting WireGuard service..."
-# sudo systemctl enable wg-quick@wg0
-# sudo systemctl start wg-quick@wg0
+# Enable and start WireGuard
+echo "Enabling and starting WireGuard service..."
+sudo systemctl enable wg-quick@wg0
+sudo systemctl start wg-quick@wg0
 
 # # Check if WireGuard tunnel is up
 # echo "Checking WireGuard tunnel status..."
