@@ -56,6 +56,8 @@ fi
 REMOTE_SERVER=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name 'remoteserver' --query value -o tsv 2>/dev/null || echo "")
 if [[ -n "$REMOTE_SERVER" ]]; then
     echo "$REMOTE_SERVER" 
+else
+    echo "No remote server found in Key Vault."
 fi
 
 # Pause for user input before continuing
