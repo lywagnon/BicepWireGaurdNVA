@@ -16,8 +16,9 @@ curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 
 # Generate WireGuard keys
 echo "Generating WireGuard keys..."
-wg genkey | sudo tee /etc/wireguard/privatekey | sudo chmod 600 /etc/wireguard/privatekey
-sudo cat /etc/wireguard/privatekey | wg pubkey | sudo tee /etc/wireguard/publickey
+wg genkey | sudo tee /etc/wireguard/privatekey >/dev/null | sudo chmod 600 /etc/wireguard/privatekey
+sudo cat /etc/wireguard/privatekey | wg pubkey | sudo tee /etc/wireguard/publickey >/dev/null
+sudo chmod 600 /etc/wireguard/publickey
 
 # Login to Azure CLI using managed identity
 echo "Logging in to Azure CLI with managed identity..."
@@ -37,10 +38,10 @@ VM_PUBLIC_KEY=$(cat /etc/wireguard/publickey)
 if [[ -n "$VM_PUBLIC_KEY" ]]; then
     az keyvault secret set --vault-name "$KEYVAULT_NAME" --name "${VM_NAME}-publickey" --value "$VM_PUBLIC_KEY"
     echo "Stored VM public key in Key Vault."
-fi
+# fi
 
-# Pause for user input before continuing
-read -p "Stored VM public key in Key Vault. Press Enter to continue..."
+# # Pause for user input before continuing
+# read -p "Stored VM public key in Key Vault. Press Enter to continue..."
 
 # Try to get the server public key from Key Vault
 REMOTE_SERVER_PUBLIC_KEY=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name 'remoteserverpublickey' --query value -o tsv 2>/dev/null || echo "")
@@ -58,8 +59,8 @@ else
     echo "No remote server found in Key Vault."
 fi
 
-# Pause for user input before continuing
-read -p "finished getting remote secrets"
+# # Pause for user input before continuing
+# read -p "Finished getting remote secrets. Press Enter to continue..."
 
 # Create WireGuard configuration file
 echo "Creating WireGuard configuration file..."
@@ -87,33 +88,33 @@ echo "Enabling and starting WireGuard service..."
 sudo systemctl enable wg-quick@wg0
 sudo systemctl start wg-quick@wg0
 
-# # Check if WireGuard tunnel is up
-# echo "Checking WireGuard tunnel status..."
-# sleep 5
-# if sudo wg show wg0 > /dev/null 2>&1; then
-#     echo "WireGuard tunnel wg0 is up and running."
-#     sudo wg show wg0
-# else
-#     echo "WireGuard tunnel wg0 failed to start. Check configuration and logs."
-#     sudo systemctl status wg-quick@wg0 --no-pager
-# fi
+# Check if WireGuard tunnel is up
+echo "Checking WireGuard tunnel status..."
+sleep 5
+if sudo wg show wg0 > /dev/null 2>&1; then
+    echo "WireGuard tunnel wg0 is up and running."
+    sudo wg show wg0
+else
+    echo "WireGuard tunnel wg0 failed to start. Check configuration and logs."
+    sudo systemctl status wg-quick@wg0 --no-pager
+fi
 
-# # Create a cron job to check for the serverpublickey and update the config, only restart the service if key changes
-# CRON_SCRIPT="/usr/local/bin/update-wg-serverkey.sh"
-# sudo bash -c "cat > $CRON_SCRIPT << 'EOS'
-# #!/bin/bash
-# KEYVAULT_NAME=\"$KEYVAULT_NAME\"
-# SERVER_PUBLIC_KEY=\$(az keyvault secret show --vault-name \"\$KEYVAULT_NAME\" --name 'serverpublickey' --query value -o tsv 2>/dev/null || echo \"\")
-# if [[ -n "$SERVER_PUBLIC_KEY" ]]; then
-#     CURRENT_KEY_FILE="/etc/wireguard/serverpublickey"
-#     if [[ ! -f "$CURRENT_KEY_FILE" ]] || [[ "$SERVER_PUBLIC_KEY" != "$(cat $CURRENT_KEY_FILE)" ]]; then
-#         echo "$SERVER_PUBLIC_KEY" | sudo tee "$CURRENT_KEY_FILE" > /dev/null
-#         sudo systemctl restart wg-quick@wg0
-#     fi
-# fi
-# EOS"
-# sudo chmod +x $CRON_SCRIPT
-# # Add cron job to run every 15 minutes
-# ( sudo crontab -l 2>/dev/null; echo "*/15 * * * * $CRON_SCRIPT" ) | sudo crontab -
+# Create a cron job to check for the serverpublickey and update the config, only restart the service if key changes
+CRON_SCRIPT="/usr/local/bin/update-wg-serverkey.sh"
+sudo bash -c "cat > $CRON_SCRIPT << 'EOS'
+#!/bin/bash
+KEYVAULT_NAME=\"$KEYVAULT_NAME\"
+SERVER_PUBLIC_KEY=\$(az keyvault secret show --vault-name \"\$KEYVAULT_NAME\" --name 'remoteserverpublickey' --query value -o tsv 2>/dev/null || echo \"\")
+if [[ -n "$SERVER_PUBLIC_KEY" ]]; then
+    CURRENT_KEY_FILE="/etc/wireguard/remoteserverpublickey"
+    if [[ ! -f "$CURRENT_KEY_FILE" ]] || [[ "$SERVER_PUBLIC_KEY" != "$(cat $CURRENT_KEY_FILE)" ]]; then
+        echo "$SERVER_PUBLIC_KEY" | sudo tee "$CURRENT_KEY_FILE" > /dev/null
+        sudo systemctl restart wg-quick@wg0
+    fi
+fi
+EOS"
+sudo chmod +x $CRON_SCRIPT
+# Add cron job to run every 15 minutes
+( sudo crontab -l 2>/dev/null; echo "*/15 * * * * $CRON_SCRIPT" ) | sudo crontab -
 
 echo "WireGuard installation and setup complete."
