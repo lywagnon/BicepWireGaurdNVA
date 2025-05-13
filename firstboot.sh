@@ -39,7 +39,7 @@ PostDown = iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
 PostDown = sysctl -w net.ipv4.ip_forward=0
 
 [Peer]
-PublicKey = ${SERVER_PUBLIC_KEY:-PLACEHOLDER}
+PublicKey = $(cat /etc/wireguard/serverpublickey 2>/dev/null || echo "PLACEHOLDER")
 Endpoint = <PUBLICIP_or_DNS>:51820
 AllowedIPs = 192.168.1.0/24
 PersistentKeepalive = 25
@@ -68,16 +68,16 @@ else
     sudo systemctl status wg-quick@wg0 --no-pager
 fi
 
-# Create a cron job to check for the serverpublickey and update the config, only restasrt if key changes
+# Create a cron job to check for the serverpublickey and update the config, only restart the service if key changes
 CRON_SCRIPT="/usr/local/bin/update-wg-serverkey.sh"
 sudo bash -c "cat > $CRON_SCRIPT << 'EOS'
 #!/bin/bash
 KEYVAULT_NAME=\"$KEYVAULT_NAME\"
 SERVER_PUBLIC_KEY=\$(az keyvault secret show --vault-name \"\$KEYVAULT_NAME\" --name 'serverpublickey' --query value -o tsv 2>/dev/null || echo \"\")
 if [[ -n "$SERVER_PUBLIC_KEY" ]]; then
-    CURRENT_KEY=$(grep '^PublicKey = ' /etc/wireguard/wg0.conf | awk '{print $3}')
-    if [[ "$SERVER_PUBLIC_KEY" != "$CURRENT_KEY" ]]; then
-        sudo sed -i "/^PublicKey = /c\PublicKey = $SERVER_PUBLIC_KEY" /etc/wireguard/wg0.conf
+    CURRENT_KEY_FILE="/etc/wireguard/serverpublickey"
+    if [[ ! -f "$CURRENT_KEY_FILE" ]] || [[ "$SERVER_PUBLIC_KEY" != "$(cat $CURRENT_KEY_FILE)" ]]; then
+        echo "$SERVER_PUBLIC_KEY" | sudo tee "$CURRENT_KEY_FILE" > /dev/null
         sudo systemctl restart wg-quick@wg0
     fi
 fi
