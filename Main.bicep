@@ -20,7 +20,7 @@ param adminPasswordSecretName string = 'WGNVAadminPassword'
 param adminUsername string = 'azureuser'
 
 @description('Select the VM SKU')
-param vmSku string = 'Standard_D2ps_v6'
+param vmSku string = 'Standard_F2as_v6'
 
 @description('Name of the Virtual Machine')
 param vmName string = 'WireGuardNVA'
@@ -34,7 +34,7 @@ var ubuntuImage = {
 }
 
 @description('Randomly generated admin password')
-var adminPassword = uniqueString(resourceGroup().id, newGuid()) // Ensure the password is evaluated here
+param adminPassword string = uniqueString(resourceGroup().id, newGuid()) // Ensure the password is evaluated here
 
 resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' = {
   name: keyVaultName

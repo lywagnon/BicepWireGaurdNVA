@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "4283763521263392718"
+      "templateHash": "7701742473825598861"
     }
   },
   "parameters": {
@@ -60,7 +60,7 @@
     },
     "vmSku": {
       "type": "string",
-      "defaultValue": "Standard_D2ps_v6",
+      "defaultValue": "Standard_F2as_v6",
       "metadata": {
         "description": "Select the VM SKU"
       }
@@ -73,7 +73,7 @@
       }
     },
     "adminPassword": {
-      "type": "securestring",
+      "type": "string",
       "defaultValue": "[uniqueString(resourceGroup().id, newGuid())]",
       "metadata": {
         "description": "Randomly generated admin password"
@@ -107,7 +107,8 @@
             "permissions": {
               "secrets": [
                 "get",
-                "set"
+                "set",
+                "list"
               ]
             }
           }
