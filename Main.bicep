@@ -25,14 +25,13 @@ param vmSku string = 'Standard_D2ps_v6'
 @description('Name of the Virtual Machine')
 param vmName string = 'WireGuardNVA'
 
-@description('Generic Ubuntu image reference')
+@description('Ubuntu 20.04 LTS Gen2 image reference')
 var ubuntuImage = {
-  publisher: 'Canonical'
-  offer: 'UbuntuServer'
-  sku: '18.04-LTS'
+  publisher: 'canonical'
+  offer: '0001-com-ubuntu-server-focal'
+  sku: '20_04-lts-gen2'
   version: 'latest'
 }
-
 
 @secure()
 @description('Randomly generated admin password')

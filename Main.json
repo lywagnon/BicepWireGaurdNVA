@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "15504703150318448481"
+      "templateHash": "3774670878657935844"
     }
   },
   "parameters": {
@@ -82,9 +82,9 @@
   },
   "variables": {
     "ubuntuImage": {
-      "publisher": "Canonical",
-      "offer": "UbuntuServer",
-      "sku": "18.04-LTS",
+      "publisher": "canonical",
+      "offer": "0001-com-ubuntu-server-focal",
+      "sku": "20_04-lts-gen2",
       "version": "latest"
     }
   },
