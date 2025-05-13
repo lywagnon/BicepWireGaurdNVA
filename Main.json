@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "1261171125513981854"
+      "templateHash": "1144733169788433852"
     }
   },
   "parameters": {
@@ -56,7 +56,7 @@
     "vnetAddressSpace": "100.127.0.0/16",
     "subnetName": "WGNVA",
     "subnetAddressPrefix": "100.127.0.0/24",
-    "adminPasswordSecretName": "WGNVAadminPassword",
+    "adminPasswordSecretName": "[parameters('vmName')]",
     "ubuntuImage": {
       "publisher": "canonical",
       "offer": "0001-com-ubuntu-server-focal",

@@ -23,7 +23,7 @@ param vmSku string = 'Standard_F2as_v6'
 param vmName string = 'WireGuardNVA${substring(format('{0:0000000}', int(replace(newGuid(), '-', '')) % 10000000), 0, 7)}'
 
 @description('Name of the secret to store the admin password')
-var adminPasswordSecretName = 'WGNVAadminPassword'
+var adminPasswordSecretName = vmName
 
 @description('Ubuntu 20.04 LTS Gen2 image reference')
 var ubuntuImage = {
