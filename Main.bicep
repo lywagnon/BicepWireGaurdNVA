@@ -64,11 +64,22 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' = {
     accessPolicies: [
       {
         tenantId: subscription().tenantId
-        objectId: 'ebf6d9f4-8eb2-4d5e-aeac-f2b32d8f12f2' // Replace with your Azure AD object ID
+        objectId: 'ebf6d9f4-8eb2-4d5e-aeac-f2b32d8f12f2' // Your Azure AD object ID
         permissions: {
           secrets: [
             'get'
             'set'
+            'list'
+          ]
+        }
+      }
+      // Add VM managed identity access policy
+      {
+        tenantId: subscription().tenantId
+        objectId: vm.identity.principalId // VM's managed identity
+        permissions: {
+          secrets: [
+            'get'
             'list'
           ]
         }
@@ -109,6 +120,7 @@ resource nic 'Microsoft.Network/networkInterfaces@2023-02-01' = {
   name: '${vmName}-nic'
   location: resourceGroup().location
   properties: {
+    enableIPForwarding: true
     ipConfigurations: [
       {
         name: 'ipconfig1'
@@ -117,6 +129,9 @@ resource nic 'Microsoft.Network/networkInterfaces@2023-02-01' = {
             id: vnet.properties.subnets[0].id
           }
           privateIPAllocationMethod: 'Dynamic'
+          publicIPAddress: {
+            id: publicIP.id
+          }
         }
       }
     ]
@@ -126,6 +141,9 @@ resource nic 'Microsoft.Network/networkInterfaces@2023-02-01' = {
 resource vm 'Microsoft.Compute/virtualMachines@2023-03-01' = {
   name: vmName
   location: resourceGroup().location
+  identity: {
+    type: 'SystemAssigned' // Enable system-assigned managed identity
+  }
   properties: {
     hardwareProfile: {
       vmSize: vmSku
@@ -176,5 +194,44 @@ resource vmExtension 'Microsoft.Compute/virtualMachines/extensions@2023-03-01' =
       ]
       commandToExecute: 'bash firstboot.sh'
     }
+  }
+}
+
+resource routeTable 'Microsoft.Network/routeTables@2023-02-01' = {
+  name: 'WGRouteTable'
+  location: resourceGroup().location
+  properties: {
+    routes: [
+      {
+        name: 'HomeLANRoute'
+        properties: {
+          addressPrefix: '192.168.1.0/24'
+          nextHopType: 'VirtualAppliance'
+          nextHopIpAddress: nic.properties.ipConfigurations[0].properties.privateIPAddress
+        }
+      }
+    ]
+  }
+}
+
+resource subnetRouteTableAssoc 'Microsoft.Network/virtualNetworks/subnets@2023-02-01' = {
+  parent: vnet
+  name: subnetName
+  properties: {
+    addressPrefix: subnetAddressPrefix
+    routeTable: {
+      id: routeTable.id
+    }
+  }
+}
+
+resource publicIP 'Microsoft.Network/publicIPAddresses@2023-02-01' = {
+  name: '${vmName}-publicIP'
+  location: resourceGroup().location
+  sku: {
+    name: 'Standard'
+  }
+  properties: {
+    publicIPAllocationMethod: 'Static'
   }
 }
