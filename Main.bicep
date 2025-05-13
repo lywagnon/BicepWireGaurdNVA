@@ -1,29 +1,29 @@
 @description('Name of the Virtual Network')
-param vnetName string = 'WGNVA-VNet'
+var vnetName = 'WGNVA-VNet'
 
 @description('Address space for the Virtual Network')
-param vnetAddressSpace string = '100.127.0.0/16'
+var vnetAddressSpace = '100.127.0.0/16'
 
 @description('Subnet name')
-param subnetName string = 'WGNVA'
+var subnetName = 'WGNVA'
 
 @description('Subnet address prefix')
-param subnetAddressPrefix string = '100.127.0.0/24'
+var subnetAddressPrefix = '100.127.0.0/24'
 
 @description('Base name for the Key Vault')
-param keyVaultBaseName string = 'myWGNVAKeyVault'
+var keyVaultBaseName = 'myWGNVAKeyVault'
 
 @description('Name of the secret to store the admin password')
-param adminPasswordSecretName string = 'WGNVAadminPassword'
+var adminPasswordSecretName = 'WGNVAadminPassword'
 
 @description('Admin username for the Virtual Machine')
-param adminUsername string = 'azureuser'
+var adminUsername = 'azureuser'
+
+@description('Name of the Virtual Machine')
+var vmName = 'WireGuardNVA'
 
 @description('Select the VM SKU')
 param vmSku string = 'Standard_F2as_v6'
-
-@description('Name of the Virtual Machine')
-param vmName string = 'WireGuardNVA'
 
 @description('Ubuntu 20.04 LTS Gen2 image reference')
 var ubuntuImage = {

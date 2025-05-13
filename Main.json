@@ -5,71 +5,15 @@
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "7802507799655220124"
+      "templateHash": "279310748864819371"
     }
   },
   "parameters": {
-    "vnetName": {
-      "type": "string",
-      "defaultValue": "WGNVA-VNet",
-      "metadata": {
-        "description": "Name of the Virtual Network"
-      }
-    },
-    "vnetAddressSpace": {
-      "type": "string",
-      "defaultValue": "100.127.0.0/16",
-      "metadata": {
-        "description": "Address space for the Virtual Network"
-      }
-    },
-    "subnetName": {
-      "type": "string",
-      "defaultValue": "WGNVA",
-      "metadata": {
-        "description": "Subnet name"
-      }
-    },
-    "subnetAddressPrefix": {
-      "type": "string",
-      "defaultValue": "100.127.0.0/24",
-      "metadata": {
-        "description": "Subnet address prefix"
-      }
-    },
-    "keyVaultBaseName": {
-      "type": "string",
-      "defaultValue": "myWGNVAKeyVault",
-      "metadata": {
-        "description": "Base name for the Key Vault"
-      }
-    },
-    "adminPasswordSecretName": {
-      "type": "string",
-      "defaultValue": "WGNVAadminPassword",
-      "metadata": {
-        "description": "Name of the secret to store the admin password"
-      }
-    },
-    "adminUsername": {
-      "type": "string",
-      "defaultValue": "azureuser",
-      "metadata": {
-        "description": "Admin username for the Virtual Machine"
-      }
-    },
     "vmSku": {
       "type": "string",
       "defaultValue": "Standard_F2as_v6",
       "metadata": {
         "description": "Select the VM SKU"
-      }
-    },
-    "vmName": {
-      "type": "string",
-      "defaultValue": "WireGuardNVA",
-      "metadata": {
-        "description": "Name of the Virtual Machine"
       }
     },
     "adminPassword": {
@@ -81,13 +25,21 @@
     }
   },
   "variables": {
+    "vnetName": "WGNVA-VNet",
+    "vnetAddressSpace": "100.127.0.0/16",
+    "subnetName": "WGNVA",
+    "subnetAddressPrefix": "100.127.0.0/24",
+    "keyVaultBaseName": "myWGNVAKeyVault",
+    "adminPasswordSecretName": "WGNVAadminPassword",
+    "adminUsername": "azureuser",
+    "vmName": "WireGuardNVA",
     "ubuntuImage": {
       "publisher": "canonical",
       "offer": "0001-com-ubuntu-server-focal",
       "sku": "20_04-lts-gen2",
       "version": "latest"
     },
-    "keyVaultName": "[take(uniqueString(resourceGroup().id, parameters('keyVaultBaseName')), 23)]"
+    "keyVaultName": "[take(uniqueString(resourceGroup().id, variables('keyVaultBaseName')), 23)]"
   },
   "resources": [
     {
@@ -119,7 +71,7 @@
     {
       "type": "Microsoft.KeyVault/vaults/secrets",
       "apiVersion": "2023-02-01",
-      "name": "[format('{0}/{1}', variables('keyVaultName'), parameters('adminPasswordSecretName'))]",
+      "name": "[format('{0}/{1}', variables('keyVaultName'), variables('adminPasswordSecretName'))]",
       "properties": {
         "value": "[parameters('adminPassword')]"
       },
@@ -130,19 +82,19 @@
     {
       "type": "Microsoft.Network/virtualNetworks",
       "apiVersion": "2023-02-01",
-      "name": "[parameters('vnetName')]",
+      "name": "[variables('vnetName')]",
       "location": "[resourceGroup().location]",
       "properties": {
         "addressSpace": {
           "addressPrefixes": [
-            "[parameters('vnetAddressSpace')]"
+            "[variables('vnetAddressSpace')]"
           ]
         },
         "subnets": [
           {
-            "name": "[parameters('subnetName')]",
+            "name": "[variables('subnetName')]",
             "properties": {
-              "addressPrefix": "[parameters('subnetAddressPrefix')]"
+              "addressPrefix": "[variables('subnetAddressPrefix')]"
             }
           }
         ]
@@ -151,7 +103,7 @@
     {
       "type": "Microsoft.Network/networkInterfaces",
       "apiVersion": "2023-02-01",
-      "name": "[format('{0}-nic', parameters('vmName'))]",
+      "name": "[format('{0}-nic', variables('vmName'))]",
       "location": "[resourceGroup().location]",
       "properties": {
         "ipConfigurations": [
@@ -159,7 +111,7 @@
             "name": "ipconfig1",
             "properties": {
               "subnet": {
-                "id": "[reference(resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName')), '2023-02-01').subnets[0].id]"
+                "id": "[reference(resourceId('Microsoft.Network/virtualNetworks', variables('vnetName')), '2023-02-01').subnets[0].id]"
               },
               "privateIPAllocationMethod": "Dynamic"
             }
@@ -167,21 +119,21 @@
         ]
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]"
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
       ]
     },
     {
       "type": "Microsoft.Compute/virtualMachines",
       "apiVersion": "2023-03-01",
-      "name": "[parameters('vmName')]",
+      "name": "[variables('vmName')]",
       "location": "[resourceGroup().location]",
       "properties": {
         "hardwareProfile": {
           "vmSize": "[parameters('vmSku')]"
         },
         "osProfile": {
-          "computerName": "[parameters('vmName')]",
-          "adminUsername": "[parameters('adminUsername')]",
+          "computerName": "[variables('vmName')]",
+          "adminUsername": "[variables('adminUsername')]",
           "adminPassword": "[parameters('adminPassword')]"
         },
         "storageProfile": {
@@ -196,13 +148,13 @@
         "networkProfile": {
           "networkInterfaces": [
             {
-              "id": "[resourceId('Microsoft.Network/networkInterfaces', format('{0}-nic', parameters('vmName')))]"
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', format('{0}-nic', variables('vmName')))]"
             }
           ]
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Network/networkInterfaces', format('{0}-nic', parameters('vmName')))]"
+        "[resourceId('Microsoft.Network/networkInterfaces', format('{0}-nic', variables('vmName')))]"
       ]
     }
   ]
