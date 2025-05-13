@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "12124128988938975040"
+      "templateHash": "7386489271564965671"
     }
   },
   "parameters": {
@@ -42,13 +42,6 @@
       "metadata": {
         "description": "Admin password for the Virtual Machine"
       }
-    },
-    "user1ObjectIdSecretName": {
-      "type": "string",
-      "defaultValue": "user1ObjectIdsecret",
-      "metadata": {
-        "description": "Name of the Key Vault secret containing the user1 objectId"
-      }
     }
   },
   "variables": {
@@ -71,17 +64,6 @@
       "name": "[format('{0}/{1}', parameters('keyVaultName'), 'add')]",
       "properties": {
         "accessPolicies": [
-          {
-            "tenantId": "[subscription().tenantId]",
-            "objectId": "[reference(resourceId('Microsoft.KeyVault/vaults/secrets', parameters('keyVaultName'), parameters('user1ObjectIdSecretName')), '2023-02-01').value]",
-            "permissions": {
-              "secrets": [
-                "get",
-                "set",
-                "list"
-              ]
-            }
-          },
           {
             "tenantId": "[subscription().tenantId]",
             "objectId": "[reference(resourceId('Microsoft.Compute/virtualMachines', parameters('vmName')), '2023-03-01', 'full').identity.principalId]",

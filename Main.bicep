@@ -42,30 +42,30 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' existing = {
   name: keyVaultName
 }
 
-@description('Name of the Key Vault secret containing the user1 objectId')
-param user1ObjectIdSecretName string = 'user1ObjectIdsecret'
+// @description('Name of the Key Vault secret containing the user1 objectId')
+// param user1ObjectIdSecretName string = 'user1ObjectIdsecret'
 
-resource user1ObjectIdSecret 'Microsoft.KeyVault/vaults/secrets@2023-02-01' existing = {
-  parent: keyVault
-  name: user1ObjectIdSecretName
-}
+// resource user1ObjectIdSecret 'Microsoft.KeyVault/vaults/secrets@2023-02-01' existing = {
+//   parent: keyVault
+//   name: user1ObjectIdSecretName
+// }
 
 resource keyVaultAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2023-02-01' = {
   parent: keyVault
   name: 'add'
   properties: {
     accessPolicies: [
-      {
-        tenantId: subscription().tenantId
-        objectId: user1ObjectIdSecret.properties.value // Retrieved from Key Vault secret
-        permissions: {
-          secrets: [
-            'get'
-            'set'
-            'list'
-          ]
-        }
-      }
+      // { // my user object id retrieved from KV secret if needed, but current model does not require me to change my permissions
+      //   tenantId: subscription().tenantId
+      //   objectId: user1ObjectIdSecret.properties.value // Retrieved from Key Vault secret
+      //   permissions: {
+      //     secrets: [
+      //       'get'
+      //       'set'
+      //       'list'
+      //     ]
+      //   }
+      // }
       // Add VM managed identity access policy
       {
         tenantId: subscription().tenantId
