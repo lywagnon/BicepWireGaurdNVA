@@ -74,6 +74,7 @@ fi
 echo "Creating WireGuard configuration file..."
 sudo bash -c "cat > /etc/wireguard/wg0.conf << EOF
 [Interface]
+MTU = 1420
 PrivateKey = $(cat /etc/wireguard/privatekey)
 Address = 192.168.2.7/32 #tunnel interface
 PostUp = iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
