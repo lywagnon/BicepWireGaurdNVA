@@ -11,13 +11,19 @@ var subnetName = 'WGNVA'
 var subnetAddressPrefix = '100.127.0.0/24'
 
 @description('Base name for the Key Vault')
-var keyVaultBaseName = 'myWGNVAKeyVault'
+param keyVaultBaseName string
+
+@description('Unique suffix for the Key Vault name')
+var keyVaultSuffix = 'kv'
+
+@description('Deterministic Key Vault name')
+var keyVaultName = '${keyVaultBaseName}-${keyVaultSuffix}'
 
 @description('Name of the secret to store the admin password')
 var adminPasswordSecretName = 'WGNVAadminPassword'
 
 @description('Admin username for the Virtual Machine')
-var adminUsername = 'azureuser'
+param adminUsername string = 'azureuser'
 
 @description('Name of the Virtual Machine')
 var vmName = 'WireGuardNVA'
@@ -37,8 +43,6 @@ var ubuntuImage = {
 @secure()
 param adminPassword string = newGuid()
 
-// Generate a Key Vault name with a random 4-character alphanumeric suffix
-var keyVaultName = take(uniqueString(resourceGroup().id, keyVaultBaseName), 23)
 
 resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' = {
   name: keyVaultName

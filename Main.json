@@ -5,10 +5,23 @@
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "279310748864819371"
+      "templateHash": "4088165414133121688"
     }
   },
   "parameters": {
+    "keyVaultBaseName": {
+      "type": "string",
+      "metadata": {
+        "description": "Base name for the Key Vault"
+      }
+    },
+    "adminUsername": {
+      "type": "string",
+      "defaultValue": "azureuser",
+      "metadata": {
+        "description": "Admin username for the Virtual Machine"
+      }
+    },
     "vmSku": {
       "type": "string",
       "defaultValue": "Standard_F2as_v6",
@@ -29,17 +42,16 @@
     "vnetAddressSpace": "100.127.0.0/16",
     "subnetName": "WGNVA",
     "subnetAddressPrefix": "100.127.0.0/24",
-    "keyVaultBaseName": "myWGNVAKeyVault",
+    "keyVaultSuffix": "kv",
+    "keyVaultName": "[format('{0}-{1}', parameters('keyVaultBaseName'), variables('keyVaultSuffix'))]",
     "adminPasswordSecretName": "WGNVAadminPassword",
-    "adminUsername": "azureuser",
     "vmName": "WireGuardNVA",
     "ubuntuImage": {
       "publisher": "canonical",
       "offer": "0001-com-ubuntu-server-focal",
       "sku": "20_04-lts-gen2",
       "version": "latest"
-    },
-    "keyVaultName": "[take(uniqueString(resourceGroup().id, variables('keyVaultBaseName')), 23)]"
+    }
   },
   "resources": [
     {
@@ -133,7 +145,7 @@
         },
         "osProfile": {
           "computerName": "[variables('vmName')]",
-          "adminUsername": "[variables('adminUsername')]",
+          "adminUsername": "[parameters('adminUsername')]",
           "adminPassword": "[parameters('adminPassword')]"
         },
         "storageProfile": {
