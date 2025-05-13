@@ -68,15 +68,18 @@ else
     sudo systemctl status wg-quick@wg0 --no-pager
 fi
 
-# Create a cron job to check for the serverpublickey and update the config
+# Create a cron job to check for the serverpublickey and update the config, only restasrt if key changes
 CRON_SCRIPT="/usr/local/bin/update-wg-serverkey.sh"
 sudo bash -c "cat > $CRON_SCRIPT << 'EOS'
 #!/bin/bash
 KEYVAULT_NAME=\"$KEYVAULT_NAME\"
 SERVER_PUBLIC_KEY=\$(az keyvault secret show --vault-name \"\$KEYVAULT_NAME\" --name 'serverpublickey' --query value -o tsv 2>/dev/null || echo \"\")
-if [[ -n \"\$SERVER_PUBLIC_KEY\" ]]; then
-    sudo sed -i \"/^PublicKey = /c\PublicKey = \$SERVER_PUBLIC_KEY\" /etc/wireguard/wg0.conf
-    sudo systemctl restart wg-quick@wg0
+if [[ -n "$SERVER_PUBLIC_KEY" ]]; then
+    CURRENT_KEY=$(grep '^PublicKey = ' /etc/wireguard/wg0.conf | awk '{print $3}')
+    if [[ "$SERVER_PUBLIC_KEY" != "$CURRENT_KEY" ]]; then
+        sudo sed -i "/^PublicKey = /c\PublicKey = $SERVER_PUBLIC_KEY" /etc/wireguard/wg0.conf
+        sudo systemctl restart wg-quick@wg0
+    fi
 fi
 EOS"
 sudo chmod +x $CRON_SCRIPT
