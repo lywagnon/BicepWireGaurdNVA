@@ -229,3 +229,13 @@ resource publicIP 'Microsoft.Network/publicIPAddresses@2023-02-01' = {
     publicIPAllocationMethod: 'Static'
   }
 }
+
+resource vmReaderRoleAssignment 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
+  name: guid(resourceGroup().id, vmName, 'Reader')
+  scope: resourceGroup()
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'acdd72a7-3385-48ef-bd42-f606fba81ae7') // Reader role
+    principalId: vm.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
