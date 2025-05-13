@@ -20,7 +20,7 @@ param adminUsername string = 'azureuser'
 param vmSku string = 'Standard_F2as_v6'
 
 @description('Name of the Virtual Machine')
-param vmName string = 'WireGuardNVA${substring(format('{0:0000000}', int(replace(newGuid(), '-', '')) % 10000000), 0, 7)}'
+param vmName string = 'WireGuardNVA${uniqueString(resourceGroup().id)}'
 
 @description('Name of the secret to store the admin password')
 var adminPasswordSecretName = vmName
