@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "12948250013361175893"
+      "templateHash": "4413141062688268597"
     }
   },
   "parameters": {
@@ -45,6 +45,7 @@
     },
     "user1ObjectIdSecretName": {
       "type": "string",
+      "defaultValue": "user1ObjectId",
       "metadata": {
         "description": "Name of the Key Vault secret containing the user1 objectId"
       }
