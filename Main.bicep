@@ -11,7 +11,7 @@ var subnetName = 'WGNVA'
 var subnetAddressPrefix  = '100.127.0.0/24'
 
 @description('Name of the existing Key Vault')
-param keyVaultName string
+param keyVaultName string = 'Vault-o-Secrets'
 
 @description('Admin username for the Virtual Machine')
 param adminUsername string = 'azureuser'
@@ -20,7 +20,7 @@ param adminUsername string = 'azureuser'
 param vmSku string = 'Standard_F2as_v6'
 
 @description('Name of the Virtual Machine')
-param vmName string = 'WireGuardNVA${toLower(substring(uniqueString(resourceGroup().id, newGuid()), 0, 7))}'
+param vmName string = 'WireGuardNVA${substring(format('{0:0000000}', int(replace(newGuid(), '-', '')) % 10000000), 0, 7)}'
 
 @description('Name of the secret to store the admin password')
 var adminPasswordSecretName = 'WGNVAadminPassword'
@@ -33,9 +33,9 @@ var ubuntuImage = {
   version: 'latest'
 }
 
-@description('Randomly generated admin password')
+@description('Admin password for the Virtual Machine')
 @secure()
-param adminPassword string = toLower(substring(replace(newGuid(), '-', ''), 0, 13))
+param adminPassword string
 
 // Reference the existing Key Vault and set access policy for the VM's managed identity
 resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' existing = {

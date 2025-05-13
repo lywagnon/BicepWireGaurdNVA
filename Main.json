@@ -5,12 +5,13 @@
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "4413141062688268597"
+      "templateHash": "1261171125513981854"
     }
   },
   "parameters": {
     "keyVaultName": {
       "type": "string",
+      "defaultValue": "Vault-o-Secrets",
       "metadata": {
         "description": "Name of the existing Key Vault"
       }
@@ -31,16 +32,15 @@
     },
     "vmName": {
       "type": "string",
-      "defaultValue": "[format('WireGuardNVA{0}', toLower(substring(uniqueString(resourceGroup().id, newGuid()), 0, 7)))]",
+      "defaultValue": "[format('WireGuardNVA{0}', substring(format('{0:0000000}', mod(int(replace(newGuid(), '-', '')), 10000000)), 0, 7))]",
       "metadata": {
         "description": "Name of the Virtual Machine"
       }
     },
     "adminPassword": {
       "type": "securestring",
-      "defaultValue": "[toLower(substring(replace(newGuid(), '-', ''), 0, 13))]",
       "metadata": {
-        "description": "Randomly generated admin password"
+        "description": "Admin password for the Virtual Machine"
       }
     },
     "user1ObjectIdSecretName": {
