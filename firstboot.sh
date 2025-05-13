@@ -66,9 +66,7 @@ fi
 
 # Try to get the server public key from Key Vault
 REMOTE_ROUTER=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name 'remoterouter' --query value -o tsv 2>/dev/null || echo "")
-if [[ -n "$REMOTE_ROUTER" ]]; then
-    # echo "$REMOTE_ROUTER" 
-else
+if [[ -z "$REMOTE_ROUTER" ]]; then
     echo "No remote server found in Key Vault."
 fi
 
