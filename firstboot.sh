@@ -54,23 +54,27 @@ sudo chmod 600 /etc/wireguard/wg0.conf
 
 # Store the public key in Azure Key Vault
 VM_PUBLIC_KEY=$(cat /etc/wireguard/publickey)
-az keyvault secret set --vault-name "$KEYVAULT_NAME" --name 'WGVMPublicKey' --value "$VM_PUBLIC_KEY"
-
-# Enable and start WireGuard
-echo "Enabling and starting WireGuard service..."
-sudo systemctl enable wg-quick@wg0
-sudo systemctl start wg-quick@wg0
-
-# Check if WireGuard tunnel is up
-echo "Checking WireGuard tunnel status..."
-sleep 5
-if sudo wg show wg0 > /dev/null 2>&1; then
-    echo "WireGuard tunnel wg0 is up and running."
-    sudo wg show wg0
+if [[ -n "$VM_PUBLIC_KEY" ]]; then
+    az keyvault secret set --vault-name "$KEYVAULT_NAME" --name 'WGVMPublicKey' --value "$VM_PUBLIC_KEY"
 else
-    echo "WireGuard tunnel wg0 failed to start. Check configuration and logs."
-    sudo systemctl status wg-quick@wg0 --no-pager
+    echo "VM public key is empty, not storing in Key Vault."
 fi
+
+# # Enable and start WireGuard
+# echo "Enabling and starting WireGuard service..."
+# sudo systemctl enable wg-quick@wg0
+# sudo systemctl start wg-quick@wg0
+
+# # Check if WireGuard tunnel is up
+# echo "Checking WireGuard tunnel status..."
+# sleep 5
+# if sudo wg show wg0 > /dev/null 2>&1; then
+#     echo "WireGuard tunnel wg0 is up and running."
+#     sudo wg show wg0
+# else
+#     echo "WireGuard tunnel wg0 failed to start. Check configuration and logs."
+#     sudo systemctl status wg-quick@wg0 --no-pager
+# fi
 
 # Create a cron job to check for the serverpublickey and update the config, only restart the service if key changes
 CRON_SCRIPT="/usr/local/bin/update-wg-serverkey.sh"
