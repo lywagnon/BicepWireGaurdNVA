@@ -10,26 +10,20 @@ var subnetName = 'WGNVA'
 @description('Subnet address prefix')
 var subnetAddressPrefix  = '100.127.0.0/24'
 
-@description('Base name for the Key Vault')
-param keyVaultBaseName string = 'WGNVAKeyVault'
-
-@description('Generated unique suffix')
-var keyVaultSuffix = substring(string(uniqueString(resourceGroup().id, keyVaultBaseName)), 0, 5)
-
-@description('Deterministic Key Vault name')
-var keyVaultName = '${keyVaultBaseName}-${keyVaultSuffix}'
-
-@description('Name of the Virtual Machine')
-var vmName = 'WireGuardNVA'
-
-@description('Name of the secret to store the admin password')
-var adminPasswordSecretName = 'WGNVAadminPassword'
+@description('Name of the existing Key Vault')
+param keyVaultName string
 
 @description('Admin username for the Virtual Machine')
 param adminUsername string = 'azureuser'
 
 @description('Select the VM SKU')
 param vmSku string = 'Standard_F2as_v6'
+
+@description('Name of the Virtual Machine')
+param vmName string = 'WireGuardNVA${toLower(substring(uniqueString(resourceGroup().id, newGuid()), 0, 7))}'
+
+@description('Name of the secret to store the admin password')
+var adminPasswordSecretName = 'WGNVAadminPassword'
 
 @description('Ubuntu 20.04 LTS Gen2 image reference')
 var ubuntuImage = {
@@ -41,26 +35,17 @@ var ubuntuImage = {
 
 @description('Randomly generated admin password')
 @secure()
-param adminPassword string = newGuid()
+param adminPassword string = toLower(substring(replace(newGuid(), '-', ''), 0, 13))
 
-// @description('Cloud-init script to download and execute firstboot.sh')
-// var cloudInit = '''
-// #cloud-config
-// runcmd:
-//   - curl -o /tmp/firstboot.sh -L 'https://raw.githubusercontent.com/MicrosoftAzureAaron/BicepWireGaurdNVA/main/firstboot.sh'
-//   - chmod +x /tmp/firstboot.sh
-//   - /tmp/firstboot.sh
-// '''
-
-resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' = {
+// Reference the existing Key Vault and set access policy for the VM's managed identity
+resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' existing = {
   name: keyVaultName
-  location: resourceGroup().location
+}
+
+resource keyVaultAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2023-02-01' = {
+  parent: keyVault
+  name: 'add'
   properties: {
-    sku: {
-      family: 'A'
-      name: 'standard'
-    }
-    tenantId: subscription().tenantId
     accessPolicies: [
       {
         tenantId: subscription().tenantId
@@ -80,7 +65,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' = {
         permissions: {
           secrets: [
             'get'
-            'set'           
+            'set'
             'list'
           ]
         }

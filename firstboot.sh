@@ -32,7 +32,7 @@ echo "Creating WireGuard configuration file..."
 sudo bash -c "cat > /etc/wireguard/wg0.conf << EOF
 [Interface]
 PrivateKey = $(cat /etc/wireguard/privatekey)
-Address = 10.10.0.2/24
+Address = 10.10.0.128/24
 PostUp = iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 PostUp = sysctl -w net.ipv4.ip_forward=1
 PostDown = iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE

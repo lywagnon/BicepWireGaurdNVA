@@ -5,15 +5,14 @@
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "10301387379885567082"
+      "templateHash": "8487781544933099805"
     }
   },
   "parameters": {
-    "keyVaultBaseName": {
+    "keyVaultName": {
       "type": "string",
-      "defaultValue": "WGNVAKeyVault",
       "metadata": {
-        "description": "Base name for the Key Vault"
+        "description": "Name of the existing Key Vault"
       }
     },
     "adminUsername": {
@@ -30,9 +29,16 @@
         "description": "Select the VM SKU"
       }
     },
+    "vmName": {
+      "type": "string",
+      "defaultValue": "[format('WireGuardNVA{0}', toLower(substring(uniqueString(resourceGroup().id, newGuid()), 0, 7)))]",
+      "metadata": {
+        "description": "Name of the Virtual Machine"
+      }
+    },
     "adminPassword": {
       "type": "securestring",
-      "defaultValue": "[newGuid()]",
+      "defaultValue": "[toLower(substring(replace(newGuid(), '-', ''), 0, 13))]",
       "metadata": {
         "description": "Randomly generated admin password"
       }
@@ -43,9 +49,6 @@
     "vnetAddressSpace": "100.127.0.0/16",
     "subnetName": "WGNVA",
     "subnetAddressPrefix": "100.127.0.0/24",
-    "keyVaultSuffix": "[substring(string(uniqueString(resourceGroup().id, parameters('keyVaultBaseName'))), 0, 5)]",
-    "keyVaultName": "[format('{0}-{1}', parameters('keyVaultBaseName'), variables('keyVaultSuffix'))]",
-    "vmName": "WireGuardNVA",
     "adminPasswordSecretName": "WGNVAadminPassword",
     "ubuntuImage": {
       "publisher": "canonical",
@@ -56,16 +59,10 @@
   },
   "resources": [
     {
-      "type": "Microsoft.KeyVault/vaults",
+      "type": "Microsoft.KeyVault/vaults/accessPolicies",
       "apiVersion": "2023-02-01",
-      "name": "[variables('keyVaultName')]",
-      "location": "[resourceGroup().location]",
+      "name": "[format('{0}/{1}', parameters('keyVaultName'), 'add')]",
       "properties": {
-        "sku": {
-          "family": "A",
-          "name": "standard"
-        },
-        "tenantId": "[subscription().tenantId]",
         "accessPolicies": [
           {
             "tenantId": "[subscription().tenantId]",
@@ -80,7 +77,7 @@
           },
           {
             "tenantId": "[subscription().tenantId]",
-            "objectId": "[reference(resourceId('Microsoft.Compute/virtualMachines', variables('vmName')), '2023-03-01', 'full').identity.principalId]",
+            "objectId": "[reference(resourceId('Microsoft.Compute/virtualMachines', parameters('vmName')), '2023-03-01', 'full').identity.principalId]",
             "permissions": {
               "secrets": [
                 "get",
@@ -92,19 +89,16 @@
         ]
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+        "[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]"
       ]
     },
     {
       "type": "Microsoft.KeyVault/vaults/secrets",
       "apiVersion": "2023-02-01",
-      "name": "[format('{0}/{1}', variables('keyVaultName'), variables('adminPasswordSecretName'))]",
+      "name": "[format('{0}/{1}', parameters('keyVaultName'), variables('adminPasswordSecretName'))]",
       "properties": {
         "value": "[parameters('adminPassword')]"
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]"
-      ]
+      }
     },
     {
       "type": "Microsoft.Network/virtualNetworks",
@@ -130,7 +124,7 @@
     {
       "type": "Microsoft.Network/networkInterfaces",
       "apiVersion": "2023-02-01",
-      "name": "[format('{0}-nic', variables('vmName'))]",
+      "name": "[format('{0}-nic', parameters('vmName'))]",
       "location": "[resourceGroup().location]",
       "properties": {
         "enableIPForwarding": true,
@@ -143,21 +137,21 @@
               },
               "privateIPAllocationMethod": "Dynamic",
               "publicIPAddress": {
-                "id": "[resourceId('Microsoft.Network/publicIPAddresses', format('{0}-publicIP', variables('vmName')))]"
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', format('{0}-publicIP', parameters('vmName')))]"
               }
             }
           }
         ]
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Network/publicIPAddresses', format('{0}-publicIP', variables('vmName')))]",
+        "[resourceId('Microsoft.Network/publicIPAddresses', format('{0}-publicIP', parameters('vmName')))]",
         "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
       ]
     },
     {
       "type": "Microsoft.Compute/virtualMachines",
       "apiVersion": "2023-03-01",
-      "name": "[variables('vmName')]",
+      "name": "[parameters('vmName')]",
       "location": "[resourceGroup().location]",
       "identity": {
         "type": "SystemAssigned"
@@ -167,7 +161,7 @@
           "vmSize": "[parameters('vmSku')]"
         },
         "osProfile": {
-          "computerName": "[variables('vmName')]",
+          "computerName": "[parameters('vmName')]",
           "adminUsername": "[parameters('adminUsername')]",
           "adminPassword": "[parameters('adminPassword')]"
         },
@@ -183,7 +177,7 @@
         "networkProfile": {
           "networkInterfaces": [
             {
-              "id": "[resourceId('Microsoft.Network/networkInterfaces', format('{0}-nic', variables('vmName')))]"
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', format('{0}-nic', parameters('vmName')))]"
             }
           ]
         },
@@ -195,13 +189,13 @@
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Network/networkInterfaces', format('{0}-nic', variables('vmName')))]"
+        "[resourceId('Microsoft.Network/networkInterfaces', format('{0}-nic', parameters('vmName')))]"
       ]
     },
     {
       "type": "Microsoft.Compute/virtualMachines/extensions",
       "apiVersion": "2023-03-01",
-      "name": "[format('{0}/{1}', variables('vmName'), 'customScript')]",
+      "name": "[format('{0}/{1}', parameters('vmName'), 'customScript')]",
       "location": "[resourceGroup().location]",
       "properties": {
         "publisher": "Microsoft.Azure.Extensions",
@@ -216,7 +210,7 @@
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+        "[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]"
       ]
     },
     {
@@ -231,13 +225,13 @@
             "properties": {
               "addressPrefix": "192.168.1.0/24",
               "nextHopType": "VirtualAppliance",
-              "nextHopIpAddress": "[reference(resourceId('Microsoft.Network/networkInterfaces', format('{0}-nic', variables('vmName'))), '2023-02-01').ipConfigurations[0].properties.privateIPAddress]"
+              "nextHopIpAddress": "[reference(resourceId('Microsoft.Network/networkInterfaces', format('{0}-nic', parameters('vmName'))), '2023-02-01').ipConfigurations[0].properties.privateIPAddress]"
             }
           }
         ]
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Network/networkInterfaces', format('{0}-nic', variables('vmName')))]"
+        "[resourceId('Microsoft.Network/networkInterfaces', format('{0}-nic', parameters('vmName')))]"
       ]
     },
     {
@@ -258,7 +252,7 @@
     {
       "type": "Microsoft.Network/publicIPAddresses",
       "apiVersion": "2023-02-01",
-      "name": "[format('{0}-publicIP', variables('vmName'))]",
+      "name": "[format('{0}-publicIP', parameters('vmName'))]",
       "location": "[resourceGroup().location]",
       "sku": {
         "name": "Standard"
