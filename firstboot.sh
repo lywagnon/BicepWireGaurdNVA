@@ -14,12 +14,6 @@ sudo apt-get install -y wireguard
 echo "Installing Azure CLI..."
 curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 
-# Generate WireGuard keys
-echo "Generating WireGuard keys..."
-wg genkey | sudo tee /etc/wireguard/privatekey >/dev/null | sudo chmod 600 /etc/wireguard/privatekey
-sudo cat /etc/wireguard/privatekey | wg pubkey | sudo tee /etc/wireguard/publickey >/dev/null
-sudo chmod 600 /etc/wireguard/publickey
-
 # Login to Azure CLI using managed identity
 echo "Logging in to Azure CLI with managed identity..."
 az login --identity --allow-no-subscriptions
@@ -29,19 +23,38 @@ VM_NAME=$(curl -H "Metadata:true" --noproxy '*' "http://169.254.169.254/metadata
 RESOURCE_GROUP=$(curl -H "Metadata:true" --noproxy '*' "http://169.254.169.254/metadata/instance/compute/resourceGroupName?api-version=2021-02-01&format=text")
 KEYVAULT_NAME=$(az keyvault list --resource-group "$RESOURCE_GROUP" --query '[0].name' -o tsv)
 
-echo "VM Name: $VM_NAME"
-echo "Resource Group: $RESOURCE_GROUP"
-echo "Key Vault Name: $KEYVAULT_NAME"
+# Try to get the private and public keys from Key Vault
+VM_PRIVATE_KEY=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name "${VM_NAME}-privatekey" --query value -o tsv 2>/dev/null || echo "")
+VM_PUBLIC_KEY=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name "${VM_NAME}-publickey" --query value -o tsv 2>/dev/null || echo "")
 
-# Store the public key in Azure Key Vault
-VM_PUBLIC_KEY=$(cat /etc/wireguard/publickey)
-if [[ -n "$VM_PUBLIC_KEY" ]]; then
-    az keyvault secret set --vault-name "$KEYVAULT_NAME" --name "${VM_NAME}-publickey" --value "$VM_PUBLIC_KEY"
-    echo "Stored VM public key in Key Vault."
-# fi
+if [[ -n "$VM_PRIVATE_KEY" && -n "$VM_PUBLIC_KEY" ]]; then
+    echo "Found existing WireGuard keys in Key Vault. Writing to files..."
+    echo "$VM_PRIVATE_KEY" | sudo tee /etc/wireguard/privatekey >/dev/null
+    sudo chmod 600 /etc/wireguard/privatekey
+    echo "$VM_PUBLIC_KEY" | sudo tee /etc/wireguard/publickey >/dev/null
+    sudo chmod 600 /etc/wireguard/publickey
+else
+    # Generate WireGuard keys
+    echo "Generating WireGuard keys..."
+    wg genkey | sudo tee /etc/wireguard/privatekey >/dev/null
+    sudo chmod 600 /etc/wireguard/privatekey
+    sudo cat /etc/wireguard/privatekey | wg pubkey | sudo tee /etc/wireguard/publickey >/dev/null
+    sudo chmod 600 /etc/wireguard/publickey
 
-# # Pause for user input before continuing
-# read -p "Stored VM public key in Key Vault. Press Enter to continue..."
+    # Store the public key in Azure Key Vault
+    VM_PUBLIC_KEY=$(cat /etc/wireguard/publickey)
+    if [[ -n "$VM_PUBLIC_KEY" ]]; then
+        az keyvault secret set --vault-name "$KEYVAULT_NAME" --name "${VM_NAME}-publickey" --value "$VM_PUBLIC_KEY"
+        echo "Stored VM public key in Key Vault."
+    fi
+
+    # Store the private key in Azure Key Vault
+    VM_PRIVATE_KEY=$(cat /etc/wireguard/privatekey)
+    if [[ -n "$VM_PRIVATE_KEY" ]]; then
+        az keyvault secret set --vault-name "$KEYVAULT_NAME" --name "${VM_NAME}-privatekey" --value "$VM_PRIVATE_KEY"
+        echo "Stored VM private key in Key Vault."
+    fi
+fi
 
 # Try to get the server public key from Key Vault
 REMOTE_SERVER_PUBLIC_KEY=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name 'remoteserverpublickey' --query value -o tsv 2>/dev/null || echo "")
@@ -54,20 +67,17 @@ fi
 # Try to get the server public key from Key Vault
 REMOTE_ROUTER=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name 'remoterouter' --query value -o tsv 2>/dev/null || echo "")
 if [[ -n "$REMOTE_ROUTER" ]]; then
-    echo "$REMOTE_ROUTER" 
+    # echo "$REMOTE_ROUTER" 
 else
     echo "No remote server found in Key Vault."
 fi
-
-# # Pause for user input before continuing
-# read -p "Finished getting remote secrets. Press Enter to continue..."
 
 # Create WireGuard configuration file
 echo "Creating WireGuard configuration file..."
 sudo bash -c "cat > /etc/wireguard/wg0.conf << EOF
 [Interface]
 PrivateKey = $(cat /etc/wireguard/privatekey)
-Address = 10.10.0.128/24 #tunnel interface
+Address = 192.168.2.7/32 #tunnel interface
 PostUp = iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 PostUp = sysctl -w net.ipv4.ip_forward=1
 PostDown = iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
