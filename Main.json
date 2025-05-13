@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "14324306341052186746"
+      "templateHash": "14334250288004189041"
     }
   },
   "parameters": {
@@ -15,21 +15,6 @@
       "metadata": {
         "description": "Base name for the Key Vault"
       }
-    },
-    "generatedGuid": {
-      "type": "string",
-      "defaultValue": "[newGuid()]",
-      "metadata": {
-        "description": "Generated GUID for unique suffix"
-      }
-    },
-    "uniqueSuffix": {
-      "type": "string",
-      "defaultValue": "[uniqueString(parameters('generatedGuid'))]"
-    },
-    "keyVaultSuffix": {
-      "type": "string",
-      "defaultValue": "[substring(parameters('uniqueSuffix'), 0, 5)]"
     },
     "adminUsername": {
       "type": "string",
@@ -58,7 +43,8 @@
     "vnetAddressSpace": "100.127.0.0/16",
     "subnetName": "WGNVA",
     "subnetAddressPrefix": "100.127.0.0/24",
-    "keyVaultName": "[format('{0}-{1}', parameters('keyVaultBaseName'), parameters('keyVaultSuffix'))]",
+    "keyVaultSuffix": "[substring(string(uniqueString(resourceGroup().id, parameters('keyVaultBaseName'))), 0, 5)]",
+    "keyVaultName": "[format('{0}-{1}', parameters('keyVaultBaseName'), variables('keyVaultSuffix'))]",
     "adminPasswordSecretName": "WGNVAadminPassword",
     "vmName": "WireGuardNVA",
     "ubuntuImage": {
