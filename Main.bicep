@@ -42,6 +42,14 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' existing = {
   name: keyVaultName
 }
 
+@description('Name of the Key Vault secret containing the user1 objectId')
+param user1ObjectIdSecretName string
+
+resource user1ObjectIdSecret 'Microsoft.KeyVault/vaults/secrets@2023-02-01' existing = {
+  parent: keyVault
+  name: user1ObjectIdSecretName
+}
+
 resource keyVaultAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2023-02-01' = {
   parent: keyVault
   name: 'add'
@@ -49,7 +57,7 @@ resource keyVaultAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2023-02-
     accessPolicies: [
       {
         tenantId: subscription().tenantId
-        objectId: 'ebf6d9f4-8eb2-4d5e-aeac-f2b32d8f12f2' // Your Azure AD object ID
+        objectId: user1ObjectIdSecret.properties.value // Retrieved from Key Vault secret
         permissions: {
           secrets: [
             'get'

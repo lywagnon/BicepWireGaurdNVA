@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "8487781544933099805"
+      "templateHash": "12948250013361175893"
     }
   },
   "parameters": {
@@ -42,6 +42,12 @@
       "metadata": {
         "description": "Randomly generated admin password"
       }
+    },
+    "user1ObjectIdSecretName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the Key Vault secret containing the user1 objectId"
+      }
     }
   },
   "variables": {
@@ -66,7 +72,7 @@
         "accessPolicies": [
           {
             "tenantId": "[subscription().tenantId]",
-            "objectId": "ebf6d9f4-8eb2-4d5e-aeac-f2b32d8f12f2",
+            "objectId": "[reference(resourceId('Microsoft.KeyVault/vaults/secrets', parameters('keyVaultName'), parameters('user1ObjectIdSecretName')), '2023-02-01').value]",
             "permissions": {
               "secrets": [
                 "get",
