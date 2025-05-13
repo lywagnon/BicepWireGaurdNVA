@@ -18,9 +18,8 @@ param adminUsername string = 'azureuser'
 
 @description('Select the VM SKU')
 param vmSku string = 'Standard_F2as_v6'
-
 @description('Name of the Virtual Machine')
-param vmName string = 'WireGuardNVA${uniqueString('vm1')}'
+param vmName string = 'WireGuardNVA${take(replace(string(uniqueString(resourceGroup().id)), '[^0-9]', ''), 7)}'
 
 @description('Name of the secret to store the admin password')
 var adminPasswordSecretName = vmName

@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "7619278172469286299"
+      "templateHash": "16504396551081691768"
     }
   },
   "parameters": {
@@ -32,7 +32,7 @@
     },
     "vmName": {
       "type": "string",
-      "defaultValue": "[format('WireGuardNVA{0}', uniqueString('vm1'))]",
+      "defaultValue": "[format('WireGuardNVA{0}', take(replace(string(uniqueString(resourceGroup().id)), '[^0-9]', ''), 7))]",
       "metadata": {
         "description": "Name of the Virtual Machine"
       }
