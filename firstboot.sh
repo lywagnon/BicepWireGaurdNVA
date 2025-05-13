@@ -118,3 +118,11 @@ sudo chmod +x $CRON_SCRIPT
 ( sudo crontab -l 2>/dev/null; echo "*/15 * * * * $CRON_SCRIPT" ) | sudo crontab -
 
 echo "WireGuard installation and setup complete."
+
+# End of script
+# Note: This script assumes that the Azure Key Vault and the secrets are already set up.
+# It also assumes that the VM has a managed identity assigned to it.
+# Make sure to replace 'remoteserverpublickey' and 'remoterouter' with the actual names of your secrets in Key Vault.
+# The script also assumes that the WireGuard interface is named 'wg0'.
+# Adjust the IP addresses and network settings as per your requirements.
+# The script uses a placeholder for the remote server public key and router address if they are not found in Key Vault.
