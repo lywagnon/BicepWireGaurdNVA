@@ -14,7 +14,7 @@ param subnetAddressPrefix string = '100.127.0.0/24'
 param keyVaultName string = 'myWGNVAKeyVault'
 
 @description('Name of the secret to store the admin password')
-param adminPasswordSecretName string = 'adminPasswordSecret'
+param adminPasswordSecretName string = 'WGNVAadminPassword'
 
 @description('Admin username for the Virtual Machine')
 param adminUsername string = 'azureuser'

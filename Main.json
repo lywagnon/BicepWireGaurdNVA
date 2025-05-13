@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "14288486008258361222"
+      "templateHash": "5837867512140488248"
     }
   },
   "parameters": {
@@ -46,7 +46,7 @@
     },
     "adminPasswordSecretName": {
       "type": "string",
-      "defaultValue": "adminPasswordSecret",
+      "defaultValue": "WGNVAadminPassword",
       "metadata": {
         "description": "Name of the secret to store the admin password"
       }
