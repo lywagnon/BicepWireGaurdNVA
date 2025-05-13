@@ -20,7 +20,7 @@ param adminUsername string = 'azureuser'
 param vmSku string = 'Standard_F2as_v6'
 
 @description('Name of the Virtual Machine')
-param vmName string = 'WireGuardNVA${take(replace(string(uniqueString(resourceGroup().id)), '[^0-9]', ''), 7)}'
+param vmName string = 'WireGuardNVA'
 
 @description('Name of the secret to store the admin password')
 var adminPasswordSecretName = vmName
@@ -41,6 +41,8 @@ param adminPassword string
 resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' existing = {
   name: keyVaultName
 }
+
+// Create a Key Vault secret to store the admin password
 resource adminPasswordSecret 'Microsoft.KeyVault/vaults/secrets@2023-02-01' = {
   parent: keyVault // Simplified syntax using the parent property
   name: adminPasswordSecretName
@@ -49,6 +51,7 @@ resource adminPasswordSecret 'Microsoft.KeyVault/vaults/secrets@2023-02-01' = {
   }
 }
 
+// Create a virtual network with a subnet
 resource vnet 'Microsoft.Network/virtualNetworks@2023-02-01' = {
   name: vnetName
   location: resourceGroup().location
@@ -69,6 +72,7 @@ resource vnet 'Microsoft.Network/virtualNetworks@2023-02-01' = {
   }
 }
 
+// Create a network interface for the VM
 resource nic 'Microsoft.Network/networkInterfaces@2023-02-01' = {
   name: '${vmName}-nic'
   location: resourceGroup().location
@@ -91,6 +95,7 @@ resource nic 'Microsoft.Network/networkInterfaces@2023-02-01' = {
   }
 }
 
+//create the NVA VM
 resource vm 'Microsoft.Compute/virtualMachines@2023-03-01' = {
   name: vmName
   location: resourceGroup().location
@@ -131,6 +136,7 @@ resource vm 'Microsoft.Compute/virtualMachines@2023-03-01' = {
   }
 }
 
+// run the custom script extension to install and configure WireGuard
 resource vmExtension 'Microsoft.Compute/virtualMachines/extensions@2023-03-01' = {
   parent: vm
   name: 'customScript'
@@ -149,6 +155,7 @@ resource vmExtension 'Microsoft.Compute/virtualMachines/extensions@2023-03-01' =
   }
 }
 
+// Create a route table route traffic for the home LAN to the WireGuard NVA
 resource routeTable 'Microsoft.Network/routeTables@2023-02-01' = {
   name: 'WGRouteTable'
   location: resourceGroup().location
@@ -166,6 +173,7 @@ resource routeTable 'Microsoft.Network/routeTables@2023-02-01' = {
   }
 }
 
+// Associate the route table with the subnet
 resource subnetRouteTableAssoc 'Microsoft.Network/virtualNetworks/subnets@2023-02-01' = {
   parent: vnet
   name: subnetName
@@ -177,6 +185,8 @@ resource subnetRouteTableAssoc 'Microsoft.Network/virtualNetworks/subnets@2023-0
   }
 }
 
+
+// Create a public IP address for the VM
 resource publicIP 'Microsoft.Network/publicIPAddresses@2023-02-01' = {
   name: '${vmName}-publicIP'
   location: resourceGroup().location
@@ -187,6 +197,8 @@ resource publicIP 'Microsoft.Network/publicIPAddresses@2023-02-01' = {
     publicIPAllocationMethod: 'Static'
   }
 }
+
+// needed to read the KVs in subscription
 resource vmReaderRoleAssignment 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
   name: guid(resourceGroup().id, vmName, 'Reader')
   scope: resourceGroup()
@@ -197,6 +209,7 @@ resource vmReaderRoleAssignment 'Microsoft.Authorization/roleAssignments@2020-04
   }
 }
 
+// needed to write the secret to the KV
 resource vmSecretContributorRoleAssignment 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
   name: guid(keyVault.id, vmName, 'SecretContributor')
   scope: keyVault
