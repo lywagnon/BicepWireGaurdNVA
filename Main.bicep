@@ -8,10 +8,10 @@ var vnetAddressSpace = '100.127.0.0/16'
 var subnetName = 'WGNVA'
 
 @description('Subnet address prefix')
-var subnetAddressPrefix = '100.127.0.0/24'
+var subnetAddressPrefix  = '100.127.0.0/24'
 
 @description('Base name for the Key Vault')
-param keyVaultBaseName string ='WGNVAKeyVault'
+param keyVaultBaseName string = 'WGNVAKeyVault'
 
 @description('Generated unique suffix')
 var keyVaultSuffix = substring(string(uniqueString(resourceGroup().id, keyVaultBaseName)), 0, 5)
@@ -19,14 +19,14 @@ var keyVaultSuffix = substring(string(uniqueString(resourceGroup().id, keyVaultB
 @description('Deterministic Key Vault name')
 var keyVaultName = '${keyVaultBaseName}-${keyVaultSuffix}'
 
+@description('Name of the Virtual Machine')
+var vmName = 'WireGuardNVA'
+
 @description('Name of the secret to store the admin password')
 var adminPasswordSecretName = 'WGNVAadminPassword'
 
 @description('Admin username for the Virtual Machine')
 param adminUsername string = 'azureuser'
-
-@description('Name of the Virtual Machine')
-var vmName = 'WireGuardNVA'
 
 @description('Select the VM SKU')
 param vmSku string = 'Standard_F2as_v6'
@@ -43,6 +43,14 @@ var ubuntuImage = {
 @secure()
 param adminPassword string = newGuid()
 
+@description('Cloud-init script to download and execute firstboot.sh')
+var cloudInit = '''
+#cloud-config
+runcmd:
+  - curl -o /tmp/firstboot.sh -L 'https://raw.githubusercontent.com/MicrosoftAzureAaron/BicepWireGaurdNVA/main/firstboot.sh'
+  - chmod +x /tmp/firstboot.sh
+  - /tmp/firstboot.sh
+'''
 
 resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' = {
   name: keyVaultName
@@ -126,6 +134,7 @@ resource vm 'Microsoft.Compute/virtualMachines@2023-03-01' = {
       computerName: vmName
       adminUsername: adminUsername
       adminPassword: adminPassword
+      customData: base64(cloudInit) // Pass the cloud-init script as base64-encoded data
     }
     storageProfile: {
       imageReference: ubuntuImage

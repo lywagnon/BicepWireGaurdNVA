@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "14334250288004189041"
+      "templateHash": "10736472789298114646"
     }
   },
   "parameters": {
@@ -45,14 +45,15 @@
     "subnetAddressPrefix": "100.127.0.0/24",
     "keyVaultSuffix": "[substring(string(uniqueString(resourceGroup().id, parameters('keyVaultBaseName'))), 0, 5)]",
     "keyVaultName": "[format('{0}-{1}', parameters('keyVaultBaseName'), variables('keyVaultSuffix'))]",
-    "adminPasswordSecretName": "WGNVAadminPassword",
     "vmName": "WireGuardNVA",
+    "adminPasswordSecretName": "WGNVAadminPassword",
     "ubuntuImage": {
       "publisher": "canonical",
       "offer": "0001-com-ubuntu-server-focal",
       "sku": "20_04-lts-gen2",
       "version": "latest"
-    }
+    },
+    "cloudInit": "#cloud-config\r\nruncmd:\r\n  - curl -o /tmp/firstboot.sh -L 'https://raw.githubusercontent.com/MicrosoftAzureAaron/BicepWireGaurdNVA/main/firstboot.sh'\r\n  - chmod +x /tmp/firstboot.sh\r\n  - /tmp/firstboot.sh\r\n"
   },
   "resources": [
     {
@@ -147,7 +148,8 @@
         "osProfile": {
           "computerName": "[variables('vmName')]",
           "adminUsername": "[parameters('adminUsername')]",
-          "adminPassword": "[parameters('adminPassword')]"
+          "adminPassword": "[parameters('adminPassword')]",
+          "customData": "[base64(variables('cloudInit'))]"
         },
         "storageProfile": {
           "imageReference": "[variables('ubuntuImage')]",
