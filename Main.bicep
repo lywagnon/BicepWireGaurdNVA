@@ -229,12 +229,21 @@ resource publicIP 'Microsoft.Network/publicIPAddresses@2023-02-01' = {
     publicIPAllocationMethod: 'Static'
   }
 }
-
 resource vmReaderRoleAssignment 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
   name: guid(resourceGroup().id, vmName, 'Reader')
   scope: resourceGroup()
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'acdd72a7-3385-48ef-bd42-f606fba81ae7') // Reader role
+    principalId: vm.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+resource vmSecretContributorRoleAssignment 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
+  name: guid(keyVault.id, vmName, 'SecretContributor')
+  scope: keyVault
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b86a8fe4-44ce-4948-aee5-eccb2c155cd7') // Key Vault Secrets User
     principalId: vm.identity.principalId
     principalType: 'ServicePrincipal'
   }

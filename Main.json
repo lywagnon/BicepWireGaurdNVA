@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "15093582587105453222"
+      "templateHash": "4740009651756105218"
     }
   },
   "parameters": {
@@ -256,6 +256,20 @@
       "name": "[guid(resourceGroup().id, parameters('vmName'), 'Reader')]",
       "properties": {
         "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'acdd72a7-3385-48ef-bd42-f606fba81ae7')]",
+        "principalId": "[reference(resourceId('Microsoft.Compute/virtualMachines', parameters('vmName')), '2023-03-01', 'full').identity.principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2020-04-01-preview",
+      "scope": "[format('Microsoft.KeyVault/vaults/{0}', parameters('keyVaultName'))]",
+      "name": "[guid(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName')), parameters('vmName'), 'SecretContributor')]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b86a8fe4-44ce-4948-aee5-eccb2c155cd7')]",
         "principalId": "[reference(resourceId('Microsoft.Compute/virtualMachines', parameters('vmName')), '2023-03-01', 'full').identity.principalId]",
         "principalType": "ServicePrincipal"
       },
