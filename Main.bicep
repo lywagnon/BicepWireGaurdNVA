@@ -152,5 +152,11 @@ resource vm 'Microsoft.Compute/virtualMachines@2023-03-01' = {
         }
       ]
     }
+    diagnosticsProfile: {
+      bootDiagnostics: {
+        enabled: true
+        storageUri: null // Use a managed storage account
+      }
+    }
   }
 }

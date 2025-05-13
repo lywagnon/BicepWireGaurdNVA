@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "10736472789298114646"
+      "templateHash": "13793931167072818762"
     }
   },
   "parameters": {
@@ -166,6 +166,12 @@
               "id": "[resourceId('Microsoft.Network/networkInterfaces', format('{0}-nic', variables('vmName')))]"
             }
           ]
+        },
+        "diagnosticsProfile": {
+          "bootDiagnostics": {
+            "enabled": true,
+            "storageUri": null
+          }
         }
       },
       "dependsOn": [
