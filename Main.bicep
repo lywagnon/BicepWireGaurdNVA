@@ -43,14 +43,14 @@ var ubuntuImage = {
 @secure()
 param adminPassword string = newGuid()
 
-@description('Cloud-init script to download and execute firstboot.sh')
-var cloudInit = '''
-#cloud-config
-runcmd:
-  - curl -o /tmp/firstboot.sh -L 'https://raw.githubusercontent.com/MicrosoftAzureAaron/BicepWireGaurdNVA/main/firstboot.sh'
-  - chmod +x /tmp/firstboot.sh
-  - /tmp/firstboot.sh
-'''
+// @description('Cloud-init script to download and execute firstboot.sh')
+// var cloudInit = '''
+// #cloud-config
+// runcmd:
+//   - curl -o /tmp/firstboot.sh -L 'https://raw.githubusercontent.com/MicrosoftAzureAaron/BicepWireGaurdNVA/main/firstboot.sh'
+//   - chmod +x /tmp/firstboot.sh
+//   - /tmp/firstboot.sh
+// '''
 
 resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' = {
   name: keyVaultName
@@ -134,7 +134,7 @@ resource vm 'Microsoft.Compute/virtualMachines@2023-03-01' = {
       computerName: vmName
       adminUsername: adminUsername
       adminPassword: adminPassword
-      customData: base64(cloudInit) // Pass the cloud-init script as base64-encoded data
+      //customData: base64(cloudInit) // Pass the cloud-init script as base64-encoded data
     }
     storageProfile: {
       imageReference: ubuntuImage
@@ -157,6 +157,24 @@ resource vm 'Microsoft.Compute/virtualMachines@2023-03-01' = {
         enabled: true
         storageUri: null // Use a managed storage account
       }
+    }
+  }
+}
+
+resource vmExtension 'Microsoft.Compute/virtualMachines/extensions@2023-03-01' = {
+  parent: vm
+  name: 'customScript'
+  location: resourceGroup().location
+  properties: {
+    publisher: 'Microsoft.Azure.Extensions'
+    type: 'CustomScript'
+    typeHandlerVersion: '2.1'
+    autoUpgradeMinorVersion: true
+    settings: {
+      fileUris: [
+        'https://raw.githubusercontent.com/MicrosoftAzureAaron/BicepWireGaurdNVA/main/firstboot.sh'
+      ]
+      commandToExecute: 'bash firstboot.sh'
     }
   }
 }

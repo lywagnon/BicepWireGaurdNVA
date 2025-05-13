@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "13793931167072818762"
+      "templateHash": "14703694969955286604"
     }
   },
   "parameters": {
@@ -52,8 +52,7 @@
       "offer": "0001-com-ubuntu-server-focal",
       "sku": "20_04-lts-gen2",
       "version": "latest"
-    },
-    "cloudInit": "#cloud-config\r\nruncmd:\r\n  - curl -o /tmp/firstboot.sh -L 'https://raw.githubusercontent.com/MicrosoftAzureAaron/BicepWireGaurdNVA/main/firstboot.sh'\r\n  - chmod +x /tmp/firstboot.sh\r\n  - /tmp/firstboot.sh\r\n"
+    }
   },
   "resources": [
     {
@@ -148,8 +147,7 @@
         "osProfile": {
           "computerName": "[variables('vmName')]",
           "adminUsername": "[parameters('adminUsername')]",
-          "adminPassword": "[parameters('adminPassword')]",
-          "customData": "[base64(variables('cloudInit'))]"
+          "adminPassword": "[parameters('adminPassword')]"
         },
         "storageProfile": {
           "imageReference": "[variables('ubuntuImage')]",
@@ -176,6 +174,27 @@
       },
       "dependsOn": [
         "[resourceId('Microsoft.Network/networkInterfaces', format('{0}-nic', variables('vmName')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2023-03-01",
+      "name": "[format('{0}/{1}', variables('vmName'), 'customScript')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "publisher": "Microsoft.Azure.Extensions",
+        "type": "CustomScript",
+        "typeHandlerVersion": "2.1",
+        "autoUpgradeMinorVersion": true,
+        "settings": {
+          "fileUris": [
+            "https://raw.githubusercontent.com/MicrosoftAzureAaron/BicepWireGaurdNVA/main/firstboot.sh"
+          ],
+          "commandToExecute": "bash firstboot.sh"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
       ]
     }
   ]
