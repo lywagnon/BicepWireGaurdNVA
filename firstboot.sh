@@ -21,7 +21,7 @@ sudo cat /etc/wireguard/privatekey | wg pubkey | sudo tee /etc/wireguard/publick
 
 # Login to Azure CLI using managed identity
 echo "Logging in to Azure CLI with managed identity..."
-az login --identity
+az login --identity --allow-no-subscriptions
 
 # Get Key Vault info
 VM_NAME=$(curl -H "Metadata:true" --noproxy '*' "http://169.254.169.254/metadata/instance/compute/name?api-version=2021-02-01&format=text")
