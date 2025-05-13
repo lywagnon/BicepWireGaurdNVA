@@ -46,6 +46,18 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' = {
       name: 'standard'
     }
     tenantId: subscription().tenantId
+    accessPolicies: [
+      {
+        tenantId: subscription().tenantId
+        objectId: 'ebf6d9f4-8eb2-4d5e-aeac-f2b32d8f12f2' // Replace with your Azure AD object ID
+        permissions: {
+          secrets: [
+            'get'
+            'set'
+          ]
+        }
+      }
+    ]
   }
 }
 

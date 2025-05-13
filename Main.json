@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "3774670878657935844"
+      "templateHash": "4283763521263392718"
     }
   },
   "parameters": {
@@ -99,7 +99,19 @@
           "family": "A",
           "name": "standard"
         },
-        "tenantId": "[subscription().tenantId]"
+        "tenantId": "[subscription().tenantId]",
+        "accessPolicies": [
+          {
+            "tenantId": "[subscription().tenantId]",
+            "objectId": "ebf6d9f4-8eb2-4d5e-aeac-f2b32d8f12f2",
+            "permissions": {
+              "secrets": [
+                "get",
+                "set"
+              ]
+            }
+          }
+        ]
       }
     },
     {
