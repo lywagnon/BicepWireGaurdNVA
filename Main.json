@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "9198291904624289555"
+      "templateHash": "9143269497701186675"
     }
   },
   "parameters": {
@@ -37,11 +37,11 @@
         "description": "Subnet address prefix"
       }
     },
-    "keyVaultName": {
+    "keyVaultBaseName": {
       "type": "string",
       "defaultValue": "myWGNVAKeyVault",
       "metadata": {
-        "description": "Name of the Key Vault"
+        "description": "Base name for the Key Vault"
       }
     },
     "adminPasswordSecretName": {
@@ -86,13 +86,14 @@
       "offer": "0001-com-ubuntu-server-focal",
       "sku": "20_04-lts-gen2",
       "version": "latest"
-    }
+    },
+    "keyVaultName": "[format('{0}{1}', parameters('keyVaultBaseName'), uniqueString(resourceGroup().id, parameters('keyVaultBaseName')))]"
   },
   "resources": [
     {
       "type": "Microsoft.KeyVault/vaults",
       "apiVersion": "2023-02-01",
-      "name": "[parameters('keyVaultName')]",
+      "name": "[variables('keyVaultName')]",
       "location": "[resourceGroup().location]",
       "properties": {
         "sku": {
@@ -118,12 +119,12 @@
     {
       "type": "Microsoft.KeyVault/vaults/secrets",
       "apiVersion": "2023-02-01",
-      "name": "[format('{0}/{1}', parameters('keyVaultName'), parameters('adminPasswordSecretName'))]",
+      "name": "[format('{0}/{1}', variables('keyVaultName'), parameters('adminPasswordSecretName'))]",
       "properties": {
         "value": "[parameters('adminPassword')]"
       },
       "dependsOn": [
-        "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"
+        "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]"
       ]
     },
     {
