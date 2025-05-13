@@ -33,9 +33,8 @@ var ubuntuImage = {
   version: 'latest'
 }
 
-@secure()
 @description('Randomly generated admin password')
-param adminPassword string = uniqueString(resourceGroup().id, newGuid())
+var adminPassword = uniqueString(resourceGroup().id, newGuid()) // Ensure the password is evaluated here
 
 resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' = {
   name: keyVaultName
@@ -54,6 +53,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' = {
           secrets: [
             'get'
             'set'
+            'list'
           ]
         }
       }
@@ -64,7 +64,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' = {
 resource adminPasswordSecret 'Microsoft.KeyVault/vaults/secrets@2023-02-01' = {
   name: '${keyVault.name}/${adminPasswordSecretName}'
   properties: {
-    value: adminPassword
+    value: adminPassword // Store the evaluated value of adminPassword
   }
 }
 
