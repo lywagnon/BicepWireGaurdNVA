@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "16504396551081691768"
+      "templateHash": "13959523487453399189"
     }
   },
   "parameters": {
@@ -46,7 +46,7 @@
   },
   "variables": {
     "vnetName": "WGNVA-VNet",
-    "vnetAddressSpace": "100.127.0.0/16",
+    "vnetAddressSpace": "100.127.0.0/24",
     "subnetName": "WGNVA",
     "subnetAddressPrefix": "100.127.0.0/24",
     "adminPasswordSecretName": "[parameters('vmName')]",
