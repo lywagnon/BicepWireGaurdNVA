@@ -11,10 +11,13 @@ var subnetName = 'WGNVA'
 var subnetAddressPrefix = '100.127.0.0/24'
 
 @description('Base name for the Key Vault')
-param keyVaultBaseName string
+param keyVaultBaseName string ='WGNVAKeyVault'
 
-@description('Unique suffix for the Key Vault name')
-var keyVaultSuffix = 'kv'
+
+@description('Generated GUID for unique suffix')
+param generatedGuid string = newGuid()
+param uniqueSuffix string = uniqueString(generatedGuid)
+param keyVaultSuffix string = substring(uniqueSuffix, 0, 5)
 
 @description('Deterministic Key Vault name')
 var keyVaultName = '${keyVaultBaseName}-${keyVaultSuffix}'
