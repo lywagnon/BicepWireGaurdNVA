@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "7701742473825598861"
+      "templateHash": "9198291904624289555"
     }
   },
   "parameters": {
@@ -73,8 +73,8 @@
       }
     },
     "adminPassword": {
-      "type": "string",
-      "defaultValue": "[uniqueString(resourceGroup().id, newGuid())]",
+      "type": "securestring",
+      "defaultValue": "[newGuid()]",
       "metadata": {
         "description": "Randomly generated admin password"
       }

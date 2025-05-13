@@ -34,7 +34,10 @@ var ubuntuImage = {
 }
 
 @description('Randomly generated admin password')
-param adminPassword string = uniqueString(resourceGroup().id, newGuid()) // Ensure the password is evaluated here
+//param adminPassword string = uniqueString(resourceGroup().id, newGuid()) // Ensure the password is evaluated here
+@secure()
+param adminPassword string = newGuid()
+
 
 resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' = {
   name: keyVaultName
