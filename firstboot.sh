@@ -28,14 +28,20 @@ VM_NAME=$(curl -H "Metadata:true" --noproxy '*' "http://169.254.169.254/metadata
 RESOURCE_GROUP=$(curl -H "Metadata:true" --noproxy '*' "http://169.254.169.254/metadata/instance/compute/resourceGroupName?api-version=2021-02-01&format=text")
 KEYVAULT_NAME=$(az keyvault list --resource-group "$RESOURCE_GROUP" --query '[0].name' -o tsv)
 
+echo "VM Name: $VM_NAME"
+echo "Resource Group: $RESOURCE_GROUP"
+echo "Key Vault Name: $KEYVAULT_NAME"
 
 # Store the public key in Azure Key Vault
 VM_PUBLIC_KEY=$(cat /etc/wireguard/publickey)
 if [[ -n "$VM_PUBLIC_KEY" ]]; then
     az keyvault secret set --vault-name "$KEYVAULT_NAME" --name "${VM_NAME}-publickey" --value "$VM_PUBLIC_KEY"
+    echo "Stored VM public key in Key Vault."
 else
     echo "VM public key is empty, not storing in Key Vault."
 fi
+# Pause for user input before continuing
+read -p "Press Enter to continue..."
 
 # Try to get the server public key from Key Vault
 REMOTE_SERVER_PUBLIC_KEY=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name 'remoteserverpublickey' --query value -o tsv 2>/dev/null || echo "")
@@ -44,6 +50,15 @@ if [[ -n "$REMOTE_SERVER_PUBLIC_KEY" ]]; then
     echo "$REMOTE_SERVER_PUBLIC_KEY" | sudo tee /etc/wireguard/remoteserverpublickey > /dev/null
     sudo chmod 600 /etc/wireguard/remoteserverpublickey
 fi
+
+# Try to get the server public key from Key Vault
+REMOTE_SERVER=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name 'remoteserver' --query value -o tsv 2>/dev/null || echo "")
+if [[ -n "$REMOTE_SERVER" ]]; then
+    echo "$REMOTE_SERVER" 
+fi
+
+# Pause for user input before continuing
+read -p "Press Enter to continue..."
 
 # Create WireGuard configuration file
 echo "Creating WireGuard configuration file..."
@@ -58,7 +73,7 @@ PostDown = sysctl -w net.ipv4.ip_forward=0
 
 [Peer]
 PublicKey = $(cat /etc/wireguard/remoteserverpublickey 2>/dev/null || echo "PLACEHOLDER")
-Endpoint = $(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name 'remoterouter' --query value -o tsv 2>/dev/null || echo "keyvaultfail")
+Endpoint = $($REMOTE_SERVER 2>/dev/null || echo "PLACEHOLDER")
 AllowedIPs = 192.168.1.0/24
 PersistentKeepalive = 25
 EOF"
