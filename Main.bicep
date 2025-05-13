@@ -10,8 +10,8 @@ param subnetName string = 'WGNVA'
 @description('Subnet address prefix')
 param subnetAddressPrefix string = '100.127.0.0/24'
 
-@description('Name of the Key Vault')
-param keyVaultName string = 'myWGNVAKeyVault'
+@description('Base name for the Key Vault')
+param keyVaultBaseName string = 'myWGNVAKeyVault'
 
 @description('Name of the secret to store the admin password')
 param adminPasswordSecretName string = 'WGNVAadminPassword'
@@ -34,10 +34,11 @@ var ubuntuImage = {
 }
 
 @description('Randomly generated admin password')
-//param adminPassword string = uniqueString(resourceGroup().id, newGuid()) // Ensure the password is evaluated here
 @secure()
 param adminPassword string = newGuid()
 
+// Generate a Key Vault name with a random 4-character alphanumeric suffix
+var keyVaultName = '${keyVaultBaseName}${toLower(uniqueString(resourceGroup().id, 'kv'))[0:4]}'
 
 resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' = {
   name: keyVaultName
