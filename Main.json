@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "15301908458473994954"
+      "templateHash": "17832248153132995464"
     }
   },
   "parameters": {
@@ -81,7 +81,12 @@
           {
             "name": "[variables('subnetName')]",
             "properties": {
-              "addressPrefix": "[variables('subnetAddressPrefix')]"
+              "addressPrefix": "[variables('subnetAddressPrefix')]",
+              "serviceEndpoints": [
+                {
+                  "service": "Microsoft.KeyVault"
+                }
+              ]
             }
           }
         ]

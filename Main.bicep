@@ -66,6 +66,11 @@ resource vnet 'Microsoft.Network/virtualNetworks@2023-02-01' = {
         name: subnetName
         properties: {
           addressPrefix: subnetAddressPrefix
+          serviceEndpoints: [
+            {
+              service: 'Microsoft.KeyVault'
+            }
+          ]
         }
       }
     ]
