@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "17832248153132995464"
+      "templateHash": "9215266972868682664"
     }
   },
   "parameters": {
@@ -65,6 +65,17 @@
       "properties": {
         "value": "[parameters('adminPassword')]"
       }
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "apiVersion": "2023-02-01",
+      "name": "[format('{0}/{1}', parameters('keyVaultName'), 'NVAPublicIP')]",
+      "properties": {
+        "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', format('{0}-publicIP', parameters('vmName'))), '2023-02-01').ipAddress]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', format('{0}-publicIP', parameters('vmName')))]"
+      ]
     },
     {
       "type": "Microsoft.Network/virtualNetworks",

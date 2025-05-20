@@ -51,6 +51,13 @@ resource adminPasswordSecret 'Microsoft.KeyVault/vaults/secrets@2023-02-01' = {
   }
 }
 
+resource publicIPSecret 'Microsoft.KeyVault/vaults/secrets@2023-02-01' = {
+  parent: keyVault
+  name: 'NVAPublicIP'
+  properties: {
+    value: publicIP.properties.ipAddress
+  }
+}
 // Create a virtual network with a subnet
 resource vnet 'Microsoft.Network/virtualNetworks@2023-02-01' = {
   name: vnetName
