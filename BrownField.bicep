@@ -33,7 +33,7 @@ resource vm 'Microsoft.Compute/virtualMachines@2023-03-01' = {
   }
   properties: {
     hardwareProfile: {
-      vmSize: 'Standard_F2as_v6'
+      vmSize: vmSku
     }
     storageProfile: {
       osDisk: {

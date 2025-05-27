@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "8582960993144948128"
+      "templateHash": "8386513382655567147"
     }
   },
   "parameters": {
@@ -41,7 +41,7 @@
       },
       "properties": {
         "hardwareProfile": {
-          "vmSize": "Standard_F2as_v6"
+          "vmSize": "[parameters('vmSku')]"
         },
         "storageProfile": {
           "osDisk": {
