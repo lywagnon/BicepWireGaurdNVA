@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "13352066303697901412"
+      "templateHash": "1216414462681013842"
     }
   },
   "parameters": {
@@ -138,7 +138,7 @@
       "identity": {
         "type": "UserAssigned",
         "userAssignedIdentities": {
-          "[format('{0}', resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'WireGaurdNVA'))]": {}
+          "[format('{0}', resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'WireGaurdNVAMI'))]": {}
         }
       },
       "properties": {

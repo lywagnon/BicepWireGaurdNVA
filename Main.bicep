@@ -110,7 +110,7 @@ resource nic 'Microsoft.Network/networkInterfaces@2023-02-01' = {
 
 // Reference the existing user-assigned managed identity
 resource userAssignedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' existing = {
-  name: 'WireGaurdNVA'
+  name: 'WireGaurdNVAMI'
 }
 
 // // Assign Reader role to the user-assigned identity at the resource group scope
