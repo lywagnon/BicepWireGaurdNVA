@@ -113,27 +113,27 @@ resource userAssignedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@
   name: 'WireGaurdNVAMI'
 }
 
-// // Assign Reader role to the user-assigned identity at the resource group scope
-// resource userAssignedIdentityReaderRole 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
-//   name: guid(resourceGroup().id, userAssignedIdentity.name, 'Reader')
-//   scope: resourceGroup()
-//   properties: {
-//     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'acdd72a7-3385-48ef-bd42-f606fba81ae7') // Reader role
-//     principalId: userAssignedIdentity.properties.principalId
-//     principalType: 'ServicePrincipal'
-//   }
-// }
+// Assign Reader role to the user-assigned identity at the resource group scope
+resource userAssignedIdentityReaderRole 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
+  name: guid(resourceGroup().id, userAssignedIdentity.name, 'Reader')
+  scope: resourceGroup()
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'acdd72a7-3385-48ef-bd42-f606fba81ae7') // Reader role
+    principalId: userAssignedIdentity.properties.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
 
-// // Assign Key Vault Secrets User role to the user-assigned identity at the Key Vault scope
-// resource userAssignedIdentitySecretContributorRole 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
-//   name: guid(keyVault.id, userAssignedIdentity.name, 'SecretContributor')
-//   scope: keyVault
-//   properties: {
-//     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b86a8fe4-44ce-4948-aee5-eccb2c155cd7') // Key Vault Secrets User
-//     principalId: userAssignedIdentity.properties.principalId
-//     principalType: 'ServicePrincipal'
-//   }
-// }
+// Assign Key Vault Secrets User role to the user-assigned identity at the Key Vault scope
+resource userAssignedIdentitySecretContributorRole 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
+  name: guid(keyVault.id, userAssignedIdentity.name, 'SecretContributor')
+  scope: keyVault
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b86a8fe4-44ce-4948-aee5-eccb2c155cd7') // Key Vault Secrets User
+    principalId: userAssignedIdentity.properties.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
 
 resource vm 'Microsoft.Compute/virtualMachines@2023-03-01' = {
   name: vmName

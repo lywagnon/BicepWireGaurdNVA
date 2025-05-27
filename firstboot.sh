@@ -14,8 +14,8 @@ sudo apt-get install -y wireguard
 echo "Installing Azure CLI..."
 curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 
-# Login to Azure CLI using managed identity
-echo "Logging in to Azure CLI with managed identity..."
+# Login to Azure CLI using user assigned managed identity, tenant, and subscription
+echo "Logging in to Azure CLI with user assigned managed identity..."
 az login --identity --allow-no-subscriptions
 
 # Get Key Vault info
