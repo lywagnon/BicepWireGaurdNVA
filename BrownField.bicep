@@ -31,16 +31,17 @@ resource publicIP 'Microsoft.Network/publicIPAddresses@2023-02-01' = {
   }
 }
 
-// Reference existing NIC
+// Reference existing NIC from Greenfield deployment
 resource nic 'Microsoft.Network/networkInterfaces@2023-02-01' existing = {
   name: '${vmName}-nic'
 }
 
-// Reference existing OS disk
-resource osDisk 'Microsoft.Compute/disks@2023-03-01' existing = {
+// Reference existing OS disk from Greenfield deployment
+resource osDisk 'Microsoft.Compute/disks@2022-07-02' existing = {
   name: '${vmName}-osdisk'
 }
-// Create VM using existing NIC
+
+// Deploy VM using existing NIC and OS disk
 resource vm 'Microsoft.Compute/virtualMachines@2023-03-01' = {
   name: vmName
   location: resourceGroup().location
@@ -61,7 +62,9 @@ resource vm 'Microsoft.Compute/virtualMachines@2023-03-01' = {
     }
     storageProfile: {
       osDisk: {
-        id: osDisk.id
+        managedDisk: {
+          id: osDisk.id
+        }
         createOption: 'Attach'
       }
     }

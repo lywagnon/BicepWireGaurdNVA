@@ -5,31 +5,10 @@
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "12864153379310087534"
+      "templateHash": "11332208701137881548"
     }
   },
   "parameters": {
-    "vnetName": {
-      "type": "string",
-      "defaultValue": "WGNVA-VNet",
-      "metadata": {
-        "description": "Name of the existing Virtual Network"
-      }
-    },
-    "subnetName": {
-      "type": "string",
-      "defaultValue": "WGNVA",
-      "metadata": {
-        "description": "Subnet name"
-      }
-    },
-    "keyVaultName": {
-      "type": "string",
-      "defaultValue": "Vault-o-Secrets",
-      "metadata": {
-        "description": "Name of the existing Key Vault"
-      }
-    },
     "adminUsername": {
       "type": "string",
       "defaultValue": "azureuser",
@@ -100,7 +79,9 @@
         },
         "storageProfile": {
           "osDisk": {
-            "id": "[resourceId('Microsoft.Compute/disks', format('{0}-osdisk', parameters('vmName')))]",
+            "managedDisk": {
+              "id": "[resourceId('Microsoft.Compute/disks', format('{0}-osdisk', parameters('vmName')))]"
+            },
             "createOption": "Attach"
           }
         },
