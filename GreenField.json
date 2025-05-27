@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "16062358223771076794"
+      "templateHash": "7712268183605892596"
     }
   },
   "parameters": {
@@ -49,7 +49,7 @@
     "vnetAddressSpace": "100.127.0.0/24",
     "subnetName": "WGNVA",
     "subnetAddressPrefix": "100.127.0.0/24",
-    "adminPasswordSecretName": "[parameters('vmName')]",
+    "adminPasswordSecretName": "[format('{0}-adminPassword', parameters('vmName'))]",
     "ubuntuImage": {
       "publisher": "canonical",
       "offer": "0001-com-ubuntu-server-focal",
@@ -59,12 +59,112 @@
   },
   "resources": [
     {
+      "type": "Microsoft.KeyVault/vaults",
+      "apiVersion": "2023-02-01",
+      "name": "[parameters('keyVaultName')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "sku": {
+          "family": "A",
+          "name": "standard"
+        },
+        "tenantId": "[subscription().tenantId]",
+        "accessPolicies": [],
+        "enableSoftDelete": true,
+        "enablePurgeProtection": false,
+        "enableRbacAuthorization": true,
+        "publicNetworkAccess": "Disabled",
+        "networkAcls": {
+          "bypass": "AzureServices",
+          "defaultAction": "Allow"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/privateDnsZones",
+      "apiVersion": "2020-06-01",
+      "name": "privatelink.vaultcore.azure.net",
+      "location": "global"
+    },
+    {
+      "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+      "apiVersion": "2020-06-01",
+      "name": "[format('{0}/{1}', 'privatelink.vaultcore.azure.net', format('{0}-link', 'privatelink.vaultcore.azure.net'))]",
+      "location": "global",
+      "properties": {
+        "virtualNetwork": {
+          "id": "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+        },
+        "registrationEnabled": false
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/privateDnsZones', 'privatelink.vaultcore.azure.net')]",
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/privateEndpoints",
+      "apiVersion": "2023-02-01",
+      "name": "kv-private-endpoint",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "subnet": {
+          "id": "[format('{0}/subnets/{1}', resourceId('Microsoft.Network/virtualNetworks', variables('vnetName')), variables('subnetName'))]"
+        },
+        "privateLinkServiceConnections": [
+          {
+            "name": "kv-private-link",
+            "properties": {
+              "privateLinkServiceId": "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]",
+              "groupIds": [
+                "vault"
+              ]
+            }
+          }
+        ],
+        "ipConfigurations": [
+          {
+            "name": "kvPrivateEndpointIPConfig",
+            "properties": {
+              "privateIPAddress": "100.127.0.254"
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+      "apiVersion": "2020-11-01",
+      "name": "[format('{0}/{1}', 'kv-private-endpoint', 'default')]",
+      "properties": {
+        "privateDnsZoneConfigs": [
+          {
+            "name": "keyVaultDnsConfig",
+            "properties": {
+              "privateDnsZoneId": "[resourceId('Microsoft.Network/privateDnsZones', 'privatelink.vaultcore.azure.net')]"
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/privateDnsZones', 'privatelink.vaultcore.azure.net')]",
+        "[resourceId('Microsoft.Network/privateEndpoints', 'kv-private-endpoint')]"
+      ]
+    },
+    {
       "type": "Microsoft.KeyVault/vaults/secrets",
       "apiVersion": "2023-02-01",
       "name": "[format('{0}/{1}', parameters('keyVaultName'), variables('adminPasswordSecretName'))]",
       "properties": {
         "value": "[parameters('adminPassword')]"
-      }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"
+      ]
     },
     {
       "type": "Microsoft.KeyVault/vaults/secrets",
@@ -74,8 +174,15 @@
         "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', format('{0}-publicIP', parameters('vmName'))), '2023-02-01').ipAddress]"
       },
       "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]",
         "[resourceId('Microsoft.Network/publicIPAddresses', format('{0}-publicIP', parameters('vmName')))]"
       ]
+    },
+    {
+      "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+      "apiVersion": "2023-01-31",
+      "name": "WireGaurdNVAMI",
+      "location": "[resourceGroup().location]"
     },
     {
       "type": "Microsoft.Authorization/roleAssignments",
@@ -85,7 +192,10 @@
         "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'acdd72a7-3385-48ef-bd42-f606fba81ae7')]",
         "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'WireGaurdNVAMI'), '2023-01-31').principalId]",
         "principalType": "ServicePrincipal"
-      }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'WireGaurdNVAMI')]"
+      ]
     },
     {
       "type": "Microsoft.Authorization/roleAssignments",
@@ -96,7 +206,11 @@
         "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b86a8fe4-44ce-4948-aee5-eccb2c155cd7')]",
         "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'WireGaurdNVAMI'), '2023-01-31').principalId]",
         "principalType": "ServicePrincipal"
-      }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'WireGaurdNVAMI')]"
+      ]
     },
     {
       "type": "Microsoft.Network/virtualNetworks",
@@ -195,7 +309,8 @@
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Network/networkInterfaces', format('{0}-nic', parameters('vmName')))]"
+        "[resourceId('Microsoft.Network/networkInterfaces', format('{0}-nic', parameters('vmName')))]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'WireGaurdNVAMI')]"
       ]
     },
     {

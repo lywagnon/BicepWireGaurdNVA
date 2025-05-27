@@ -13,22 +13,10 @@ param vmName string = 'WireGuardNVA'
 param adminPassword string
 
 @description('Name of the existing user-assigned managed identity')
-param userAssignedIdentityName string = 'WireGaurdNVAMI'
+var userAssignedIdentityName = 'WireGaurdNVAMI'
 
 resource userAssignedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' existing = {
   name: userAssignedIdentityName
-}
-
-// Create Public IP
-resource publicIP 'Microsoft.Network/publicIPAddresses@2023-02-01' = {
-  name: '${vmName}-publicIP'
-  location: resourceGroup().location
-  sku: {
-    name: 'Standard'
-  }
-  properties: {
-    publicIPAllocationMethod: 'Static'
-  }
 }
 
 // Reference existing NIC from Greenfield deployment
@@ -62,6 +50,7 @@ resource vm 'Microsoft.Compute/virtualMachines@2023-03-01' = {
     }
     storageProfile: {
       osDisk: {
+        osType: 'Linux'
         managedDisk: {
           id: osDisk.id
         }

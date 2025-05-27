@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "11332208701137881548"
+      "templateHash": "5886966146298234952"
     }
   },
   "parameters": {
@@ -35,28 +35,12 @@
       "metadata": {
         "description": "Admin password for the Virtual Machine"
       }
-    },
-    "userAssignedIdentityName": {
-      "type": "string",
-      "defaultValue": "WireGaurdNVAMI",
-      "metadata": {
-        "description": "Name of the existing user-assigned managed identity"
-      }
     }
   },
+  "variables": {
+    "userAssignedIdentityName": "WireGaurdNVAMI"
+  },
   "resources": [
-    {
-      "type": "Microsoft.Network/publicIPAddresses",
-      "apiVersion": "2023-02-01",
-      "name": "[format('{0}-publicIP', parameters('vmName'))]",
-      "location": "[resourceGroup().location]",
-      "sku": {
-        "name": "Standard"
-      },
-      "properties": {
-        "publicIPAllocationMethod": "Static"
-      }
-    },
     {
       "type": "Microsoft.Compute/virtualMachines",
       "apiVersion": "2023-03-01",
@@ -65,7 +49,7 @@
       "identity": {
         "type": "UserAssigned",
         "userAssignedIdentities": {
-          "[format('{0}', resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('userAssignedIdentityName')))]": {}
+          "[format('{0}', resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('userAssignedIdentityName')))]": {}
         }
       },
       "properties": {
@@ -79,6 +63,7 @@
         },
         "storageProfile": {
           "osDisk": {
+            "osType": "Linux",
             "managedDisk": {
               "id": "[resourceId('Microsoft.Compute/disks', format('{0}-osdisk', parameters('vmName')))]"
             },

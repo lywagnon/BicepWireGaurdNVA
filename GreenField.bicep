@@ -23,7 +23,7 @@ param vmSku string = 'Standard_F2as_v6'
 param vmName string = 'WireGuardNVA'
 
 @description('Name of the secret to store the admin password')
-var adminPasswordSecretName = vmName
+var adminPasswordSecretName = '${vmName}-adminPassword'
 
 @description('Ubuntu 20.04 LTS Gen2 image reference')
 var ubuntuImage = {
@@ -37,9 +37,91 @@ var ubuntuImage = {
 @secure()
 param adminPassword string
 
-// Reference the existing Key Vault and set access policy for the VM's managed identity
-resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' existing = {
+// Deploy a new Key Vault and set access policy for the VM's managed identity
+resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' = {
   name: keyVaultName
+  location: resourceGroup().location
+  properties: {
+    sku: {
+      family: 'A'
+      name: 'standard'
+    }
+    tenantId: subscription().tenantId
+    accessPolicies: []
+    enableSoftDelete: true
+    enablePurgeProtection: false
+    enableRbacAuthorization: true
+    publicNetworkAccess: 'Disabled'
+    networkAcls: {
+      bypass: 'AzureServices'
+      defaultAction: 'Allow'
+    }
+  }
+}
+
+// Create Private DNS Zone for Key Vault
+resource keyVaultPrivateDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
+  name: 'privatelink.vaultcore.azure.net'
+  location: 'global'
+}
+
+// Link Private DNS Zone to VNet
+resource keyVaultDnsZoneVnetLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
+  name: '${keyVaultPrivateDnsZone.name}-link'
+  parent: keyVaultPrivateDnsZone
+  location: 'global'
+  properties: {
+    virtualNetwork: {
+      id: vnet.id
+    }
+    registrationEnabled: false
+  }
+}
+
+// Create Private Endpoint to reference the DNS Zone
+resource keyVaultPrivateEndpoint 'Microsoft.Network/privateEndpoints@2023-02-01' = {
+  name: 'kv-private-endpoint'
+  location: resourceGroup().location
+  properties: {
+    subnet: {
+      id: '${vnet.id}/subnets/${subnetName}'
+    }
+    privateLinkServiceConnections: [
+      {
+        name: 'kv-private-link'
+        properties: {
+          privateLinkServiceId: keyVault.id
+          groupIds: [
+            'vault'
+          ]
+        }
+      }
+    ]
+    ipConfigurations: [
+      {
+        name: 'kvPrivateEndpointIPConfig'
+        properties: {
+          privateIPAddress: '100.127.0.254' // Highest available IP in subnet
+        }
+      }
+    ]
+  }
+}
+
+// DNS Zone Group for Private Endpoint
+resource privateDnsZoneGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2020-11-01' = {
+  parent: keyVaultPrivateEndpoint
+  name: 'default'
+  properties: {
+    privateDnsZoneConfigs: [
+      {
+        name: 'keyVaultDnsConfig'
+        properties: {
+          privateDnsZoneId: keyVaultPrivateDnsZone.id
+        }
+      }
+    ]
+  }
 }
 
 // Create a Key Vault secret to store the admin password
@@ -58,9 +140,11 @@ resource publicIPSecret 'Microsoft.KeyVault/vaults/secrets@2023-02-01' = {
     value: publicIP.properties.ipAddress
   }
 }
-// Reference the existing user-assigned managed identity
-resource userAssignedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' existing = {
+
+// Create a user-assigned managed identity for the VM
+resource userAssignedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
   name: 'WireGaurdNVAMI'
+  location: resourceGroup().location
 }
 
 // Assign Reader role to the user-assigned identity at the resource group scope
