@@ -1,16 +1,8 @@
-
-@description('Admin username for the Virtual Machine')
-param adminUsername string = 'azureuser'
-
 @description('Select the VM SKU')
 param vmSku string = 'Standard_F2as_v6'
 
 @description('Name of the Virtual Machine')
 param vmName string = 'WireGuardNVA'
-
-@description('Admin password for the Virtual Machine')
-@secure()
-param adminPassword string
 
 @description('Name of the existing user-assigned managed identity')
 var userAssignedIdentityName = 'WireGaurdNVAMI'
@@ -41,12 +33,7 @@ resource vm 'Microsoft.Compute/virtualMachines@2023-03-01' = {
   }
   properties: {
     hardwareProfile: {
-      vmSize: vmSku
-    }
-    osProfile: {
-      computerName: vmName
-      adminUsername: adminUsername
-      adminPassword: adminPassword
+      vmSize: 'Standard_F2as_v6'
     }
     storageProfile: {
       osDisk: {
@@ -66,12 +53,6 @@ resource vm 'Microsoft.Compute/virtualMachines@2023-03-01' = {
           }
         }
       ]
-    }
-    diagnosticsProfile: {
-      bootDiagnostics: {
-        enabled: true
-        storageUri: null
-      }
     }
   }
 }

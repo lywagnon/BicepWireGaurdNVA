@@ -5,17 +5,10 @@
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "5886966146298234952"
+      "templateHash": "8582960993144948128"
     }
   },
   "parameters": {
-    "adminUsername": {
-      "type": "string",
-      "defaultValue": "azureuser",
-      "metadata": {
-        "description": "Admin username for the Virtual Machine"
-      }
-    },
     "vmSku": {
       "type": "string",
       "defaultValue": "Standard_F2as_v6",
@@ -28,12 +21,6 @@
       "defaultValue": "WireGuardNVA",
       "metadata": {
         "description": "Name of the Virtual Machine"
-      }
-    },
-    "adminPassword": {
-      "type": "securestring",
-      "metadata": {
-        "description": "Admin password for the Virtual Machine"
       }
     }
   },
@@ -54,12 +41,7 @@
       },
       "properties": {
         "hardwareProfile": {
-          "vmSize": "[parameters('vmSku')]"
-        },
-        "osProfile": {
-          "computerName": "[parameters('vmName')]",
-          "adminUsername": "[parameters('adminUsername')]",
-          "adminPassword": "[parameters('adminPassword')]"
+          "vmSize": "Standard_F2as_v6"
         },
         "storageProfile": {
           "osDisk": {
@@ -79,12 +61,6 @@
               }
             }
           ]
-        },
-        "diagnosticsProfile": {
-          "bootDiagnostics": {
-            "enabled": true,
-            "storageUri": null
-          }
         }
       }
     },
