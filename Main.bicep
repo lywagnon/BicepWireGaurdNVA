@@ -107,12 +107,41 @@ resource nic 'Microsoft.Network/networkInterfaces@2023-02-01' = {
   }
 }
 
-//create the NVA VM
+// Reference the existing user-assigned managed identity
+resource userAssignedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' existing = {
+  name: 'WireGaurdNVA'
+}
+
+// Assign Reader role to the user-assigned identity at the resource group scope
+resource userAssignedIdentityReaderRole 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
+  name: guid(resourceGroup().id, userAssignedIdentity.name, 'Reader')
+  scope: resourceGroup()
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'acdd72a7-3385-48ef-bd42-f606fba81ae7') // Reader role
+    principalId: userAssignedIdentity.properties.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// Assign Key Vault Secrets User role to the user-assigned identity at the Key Vault scope
+resource userAssignedIdentitySecretContributorRole 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
+  name: guid(keyVault.id, userAssignedIdentity.name, 'SecretContributor')
+  scope: keyVault
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b86a8fe4-44ce-4948-aee5-eccb2c155cd7') // Key Vault Secrets User
+    principalId: userAssignedIdentity.properties.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
 resource vm 'Microsoft.Compute/virtualMachines@2023-03-01' = {
   name: vmName
   location: resourceGroup().location
   identity: {
-    type: 'SystemAssigned' // Enable system-assigned managed identity
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${userAssignedIdentity.id}': {}
+    }
   }
   properties: {
     hardwareProfile: {
@@ -210,24 +239,4 @@ resource publicIP 'Microsoft.Network/publicIPAddresses@2023-02-01' = {
   }
 }
 
-// needed to read the KVs in subscription
-resource vmReaderRoleAssignment 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
-  name: guid(resourceGroup().id, vmName, 'Reader')
-  scope: resourceGroup()
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'acdd72a7-3385-48ef-bd42-f606fba81ae7') // Reader role
-    principalId: vm.identity.principalId
-    principalType: 'ServicePrincipal'
-  }
-}
 
-// needed to write the secret to the KV
-resource vmSecretContributorRoleAssignment 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
-  name: guid(keyVault.id, vmName, 'SecretContributor')
-  scope: keyVault
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b86a8fe4-44ce-4948-aee5-eccb2c155cd7') // Key Vault Secrets User
-    principalId: vm.identity.principalId
-    principalType: 'ServicePrincipal'
-  }
-}
