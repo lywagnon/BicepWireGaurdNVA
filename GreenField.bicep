@@ -152,7 +152,7 @@ resource userAssignedIdentityReaderRole 'Microsoft.Authorization/roleAssignments
   name: guid(resourceGroup().id, userAssignedIdentity.name, 'Reader')
   scope: resourceGroup()
   properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'acdd72a7-3385-48ef-bd42-f606fba81ae7') // Reader role
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'acdd72a7-3385-48ef-bd42-f606fba81ae7') // Reader role, az cli commands in boot script
     principalId: userAssignedIdentity.properties.principalId
     principalType: 'ServicePrincipal'
   }
