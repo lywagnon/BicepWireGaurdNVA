@@ -47,23 +47,27 @@ echo "Trying to get the private and public keys from Key Vault..."
 VM_PRIVATE_KEY=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name "${VM_NAME}-privatekey" --query value -o tsv 2>/dev/null || echo "")
 VM_PUBLIC_KEY=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name "${VM_NAME}-publickey" --query value -o tsv 2>/dev/null || echo "")
 
-# if script is running for the first time, generate keys and store them in Key Vault
+# Output the first 7 characters of both keys for verification
+echo "VM_PUBLIC_KEY (first 7 chars): ${VM_PUBLIC_KEY:0:7}"
+echo "VM_PRIVATE_KEY (first 7 chars): ${VM_PRIVATE_KEY:0:7}"
+
+# Check to see if the keys were retrieved successfully
+if [[ -n "$VM_PRIVATE_KEY" && -n "$VM_PUBLIC_KEY" ]]; then
+    echo "Found existing WireGuard keys in Key Vault. Writing to files..."
+    echo "$VM_PRIVATE_KEY" | sudo tee /etc/wireguard/privatekey >/dev/null
+    sudo chmod 600 /etc/wireguard/privatekey
+    echo "$VM_PUBLIC_KEY" | sudo tee /etc/wireguard/publickey >/dev/null
+    sudo chmod 600 /etc/wireguard/publickey
+else
+    echo "Unable to retrieve Secrets from KV"
+    echo "Please ensure the secrets ${VM_NAME}-privatekey and ${VM_NAME}-publickey are set in Key Vault."
+    echo "VM_PRIVATE_KEY: $VM_PRIVATE_KEY"
+    echo "VM_PUBLIC_KEY: $VM_PUBLIC_KEY"
+    exit 1
+fi
+
 if [[ "$SCRIPT_PATH" == "/home/azureuser/firstboot.sh" ]]; then
     echo "Not in custom script path. Checking for existing WireGuard keys in Key Vault..."
-    if [[ -n "$VM_PRIVATE_KEY" && -n "$VM_PUBLIC_KEY" ]]; then
-        echo "Found existing WireGuard keys in Key Vault. Writing to files..."
-        echo "$VM_PRIVATE_KEY" | sudo tee /etc/wireguard/privatekey >/dev/null
-        sudo chmod 600 /etc/wireguard/privatekey
-        echo "$VM_PUBLIC_KEY" | sudo tee /etc/wireguard/publickey >/dev/null
-        sudo chmod 600 /etc/wireguard/publickey
-    else
-        echo "Unable to retrieve Secrets from KV"
-        echo "Please ensure the secrets ${VM_NAME}-privatekey and ${VM_NAME}-publickey are set in Key Vault."
-        echo "VM_PRIVATE_KEY: $VM_PRIVATE_KEY"
-        echo "VM_PUBLIC_KEY: $VM_PUBLIC_KEY"
-        exit 1
-    fi
-else
     # # Generate WireGuard keys
     # read -n 1 -s -r -p "Running for the First Time. Generating WireGuard keys. Press any key to continue..."
     # echo
@@ -152,7 +156,6 @@ curl -fsSL https://raw.githubusercontent.com/MicrosoftAzureAaron/BicepWireGaurdN
 sudo chown azureuser:azureuser "$USER_SCRIPT"
 sudo chmod +x "$USER_SCRIPT"
 
-# If you know your cron setup requires /usr/local/bin, uncomment below:
 sudo mv "$USER_SCRIPT" "$CRON_SCRIPT"
 sudo chmod +x "$CRON_SCRIPT"
 CRON_TARGET="$CRON_SCRIPT"
@@ -167,7 +170,9 @@ echo "WireGuard installation and setup complete."
 
 # Copy the firstboot.sh script to /home/azureuser/ only if not already running from there
 if [[ "$SCRIPT_PATH" != "/home/azureuser/firstboot.sh" ]]; then
-    sudo cp /c:/Users/aarosanders/Desktop/wiregaurdNVA/new/firstboot.sh /home/azureuser/
+    sudo cp /var/lib/waagent/custom-script/download/0/firstboot.sh /home/azureuser/firstboot.sh
+    sudo chmod +x /home/azureuser/firstboot.sh
+    # Ensure the script is owned by azureuser
     sudo chown azureuser:azureuser /home/azureuser/firstboot.sh
 fi
 
