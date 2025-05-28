@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "7712268183605892596"
+      "templateHash": "3039049644924692100"
     }
   },
   "parameters": {
@@ -71,8 +71,8 @@
         "tenantId": "[subscription().tenantId]",
         "accessPolicies": [],
         "enableSoftDelete": true,
-        "enablePurgeProtection": false,
-        "enableRbacAuthorization": true,
+        "enablePurgeProtection": true,
+        "enableRbacAuthorization": false,
         "publicNetworkAccess": "Disabled",
         "networkAcls": {
           "bypass": "AzureServices",
