@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "12948830682153880676"
+      "templateHash": "267493412694323040"
     }
   },
   "parameters": {
@@ -14,6 +14,12 @@
       "defaultValue": "Standard_F2as_v6",
       "metadata": {
         "description": "Select the VM SKU"
+      }
+    },
+    "osDiskName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the existing OS disk to attach to the VM"
       }
     }
   },
@@ -40,7 +46,7 @@
           "osDisk": {
             "osType": "Linux",
             "managedDisk": {
-              "id": "[resourceId('Microsoft.Compute/disks', first(listKeys(resourceGroup().id, 'Microsoft.Resources/resourceGroups').value))]"
+              "id": "[resourceId('Microsoft.Compute/disks', parameters('osDiskName'))]"
             },
             "createOption": "Attach"
           }

@@ -4,6 +4,9 @@ param vmSku string = 'Standard_F2as_v6'
 @description('Name of the Virtual Machine')
 var vmName = 'WireGuardNVA'
 
+@description('Name of the existing OS disk to attach to the VM')
+param osDiskName string
+
 // @description('Name of the existing user-assigned managed identity')
 // var userAssignedIdentityName = 'WireGaurdNVAMI'
 
@@ -17,9 +20,9 @@ resource nic 'Microsoft.Network/networkInterfaces@2023-02-01' existing = {
 }
 
 // Reference existing OS disk from Greenfield deployment
-// Get the only managed disk in the resource group
+// You must specify the actual disk name or use a parameter/input, not listKeys/resourceGroups
 resource osDisk 'Microsoft.Compute/disks@2022-07-02' existing = {
-  name: first(listKeys(resourceGroup().id, 'Microsoft.Resources/resourceGroups').value)
+  name: osDiskName
 }
 
 // Deploy VM using existing NIC and OS disk
