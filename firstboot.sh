@@ -36,7 +36,7 @@ else
     echo "VM Name: $VM_NAME"
     echo "Resource Group: $RESOURCE_GROUP"
     echo "Key Vault Name: $KEYVAULT_NAME"
-    echo "Script Path: $SCRIPT_PATH"
+    echo "Script Path: $SCRIPT_PATH"  
 fi
 # # Pause and wait for user to press any key before continuing
 # read -n 1 -s -r -p "Press any key to continue..."
