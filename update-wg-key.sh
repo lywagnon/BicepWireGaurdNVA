@@ -40,3 +40,22 @@ else
     echo "[update-wg-serverkey.sh] No key changes detected. WireGuard service remains running."
 fi
 echo "[update-wg-serverkey.sh] WireGuard keys checked successfully."
+
+# Check for commit version changes before downloading firstboot.sh
+REMOTE_COMMIT=$(curl -fsSL https://api.github.com/repos/MicrosoftAzureAaron/BicepWireGaurdNVA/commits/main | grep '"sha":' | head -n 1 | awk -F '"' '{print $4}')
+LOCAL_COMMIT_FILE="/home/azureuser/firstboot.sh.commit"
+
+LOCAL_COMMIT=""
+if [[ -f "$LOCAL_COMMIT_FILE" ]]; then
+    LOCAL_COMMIT=$(cat "$LOCAL_COMMIT_FILE")
+fi
+
+if [[ "$REMOTE_COMMIT" != "$LOCAL_COMMIT" && -n "$REMOTE_COMMIT" ]]; then
+    echo "[update-wg-serverkey.sh] New commit detected for firstboot.sh, downloading updated script."
+    curl -fsSL -o /home/azureuser/firstboot.sh https://raw.githubusercontent.com/MicrosoftAzureAaron/BicepWireGaurdNVA/refs/heads/main/firstboot.sh
+    sudo chown azureuser:azureuser /home/azureuser/firstboot.sh
+    sudo chmod 700 /home/azureuser/firstboot.sh
+    echo "$REMOTE_COMMIT" > "$LOCAL_COMMIT_FILE"
+else
+    echo "[update-wg-serverkey.sh] No changes detected for firstboot.sh, skipping download."
+fi

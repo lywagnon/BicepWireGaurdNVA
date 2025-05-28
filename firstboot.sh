@@ -18,20 +18,23 @@ sudo apt-get install -y wireguard
 echo "Installing Azure CLI..."
 curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 
-# Wait until 60 seconds have passed since script start time to allow managed identity to propagate
-START_EPOCH=$(date -d "$START_TIME" +%s)
-while true; do
-    NOW_EPOCH=$(date +%s)
-    ELAPSED=$((NOW_EPOCH - START_EPOCH))
-    if (( ELAPSED >= 60 )); then
-        echo "60 seconds have elapsed since script start. Continuing..."
-        break
-    else
-        REMAINING=$((60 - ELAPSED))
-        echo "Waiting for managed identity propagation... $REMAINING seconds remaining."
-        sleep 5
-    fi
-done
+#if script is not running from /home/azureuser/firstboot.sh, wait for 60 seconds to allow managed identity to propagate
+if [[ "$SCRIPT_PATH" != "/home/azureuser/firstboot.sh" ]]; then
+    # Wait until 60 seconds have passed since script start time to allow managed identity to propagate
+    START_EPOCH=$(date -d "$START_TIME" +%s)
+    while true; do
+        NOW_EPOCH=$(date +%s)
+        ELAPSED=$((NOW_EPOCH - START_EPOCH))
+        if (( ELAPSED >= 60 )); then
+            echo "60 seconds have elapsed since script start. Continuing..."
+            break
+        else
+            REMAINING=$((60 - ELAPSED))
+            echo "Waiting for managed identity propagation... $REMAINING seconds remaining."
+            sleep 5
+        fi
+    done
+fi
 
 # Login to Azure CLI using user assigned managed identity, tenant, and subscription
 echo "Logging in to Azure CLI with user assigned managed identity..."
@@ -185,15 +188,41 @@ else
     exit 1
 fi
 
-# Download the update-wg-key.sh script to /home/azureuser/
+if [[ "$SCRIPT_PATH" == "/home/azureuser/firstboot.sh" ]]; then
+
+echo "Setting up cron job and firstboot.sh script to start on VM boot..."
+
+# Download or update update-wg-key.sh in /usr/local/bin only if the remote file has changed
+
 USER_SCRIPT="/home/azureuser/update-wg-key.sh"
 CRON_SCRIPT="/usr/local/bin/update-wg-key.sh"
-curl -fsSL https://raw.githubusercontent.com/MicrosoftAzureAaron/BicepWireGaurdNVA/refs/heads/main/update-wg-key.sh -o "$USER_SCRIPT"
-sudo chown azureuser:azureuser "$USER_SCRIPT"
-sudo chmod +x "$USER_SCRIPT"
+LOCAL_COMMIT_FILE="/usr/local/bin/update-wg-key.sh.commit"
 
-sudo mv "$USER_SCRIPT" "$CRON_SCRIPT"
-sudo chmod +x "$CRON_SCRIPT"
+# Get the latest commit SHA for update-wg-key.sh from GitHub
+REMOTE_COMMIT=$(curl -fsSL "https://api.github.com/repos/MicrosoftAzureAaron/BicepWireGaurdNVA/commits?path=update-wg-key.sh&sha=main&per_page=1" | grep '"sha":' | head -n 1 | awk -F '"' '{print $4}')
+
+LOCAL_COMMIT=""
+if [[ -f "$LOCAL_COMMIT_FILE" ]]; then
+    LOCAL_COMMIT=$(cat "$LOCAL_COMMIT_FILE")
+fi
+
+if [[ "$REMOTE_COMMIT" != "$LOCAL_COMMIT" && -n "$REMOTE_COMMIT" ]]; then
+    echo "[firstboot.sh] New commit detected for update-wg-key.sh, downloading updated script."
+    curl -fsSL -o "$USER_SCRIPT" "https://raw.githubusercontent.com/MicrosoftAzureAaron/BicepWireGaurdNVA/main/update-wg-key.sh"
+    sudo chown azureuser:azureuser "$USER_SCRIPT"
+    sudo chmod +x "$USER_SCRIPT"
+    sudo mv "$USER_SCRIPT" "$CRON_SCRIPT"
+    sudo chmod +x "$CRON_SCRIPT"
+    echo "$REMOTE_COMMIT" | sudo tee "$LOCAL_COMMIT_FILE" >/dev/null
+else
+    echo "[firstboot.sh] No changes detected for update-wg-key.sh, skipping download."
+    # Ensure the script exists and is executable
+    if [[ ! -f "$CRON_SCRIPT" ]]; then
+        curl -fsSL -o "$CRON_SCRIPT" "https://raw.githubusercontent.com/MicrosoftAzureAaron/BicepWireGaurdNVA/main/update-wg-key.sh"
+        sudo chmod +x "$CRON_SCRIPT"
+    fi
+fi
+
 CRON_TARGET="$CRON_SCRIPT"
 
 # Add cron job to run every 5 minutes, ensuring no duplicates
@@ -212,6 +241,27 @@ if [[ "$SCRIPT_PATH" != "/home/azureuser/firstboot.sh" ]]; then
     sudo chown azureuser:azureuser /home/azureuser/firstboot.sh
 fi
 
+# Ensure firstboot.sh runs at VM startup via systemd service
+
+SERVICE_FILE="/etc/systemd/system/firstboot.service"
+sudo bash -c "cat > $SERVICE_FILE << EOF
+[Unit]
+Description=Run firstboot.sh at startup
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=azureuser
+ExecStart=/home/azureuser/firstboot.sh
+RemainAfterExit=true
+
+[Install]
+WantedBy=multi-user.target
+EOF"
+
+sudo systemctl daemon-reload
+sudo systemctl enable firstboot.service
 # End of script
 
 # add curls for firstboot.sh and update-wg-key.sh into cron job so that if github updates the scripts should also update
