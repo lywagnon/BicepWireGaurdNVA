@@ -193,7 +193,10 @@ EOS
 # Make the script executable
 sudo chmod +x $CRON_SCRIPT
 
-# Add cron job to run every 15 minutes
+# Add cron job to run every 15 minutes, ensuring no duplicates
+# Remove any existing cron jobs for this script
+sudo crontab -l 2>/dev/null | grep -v "$CRON_SCRIPT" | sudo crontab -
+# Add the new cron job
 ( sudo crontab -l 2>/dev/null; echo "*/15 * * * * $CRON_SCRIPT" ) | sudo crontab -
 
 echo "WireGuard installation and setup complete."
