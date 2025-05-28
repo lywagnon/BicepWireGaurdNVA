@@ -11,7 +11,7 @@ var subnetName = 'WGNVA'
 var subnetAddressPrefix  = '10.0.0.0/27'
 
 @description('Name of the existing Key Vault')
-param keyVaultName string = 'Vault-o-Secrets'
+param keyVaultName string = 'lywagnon.keyVault.01'
 
 @description('Admin username for the Virtual Machine')
 param adminUsername string = 'lytehouse'
