@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "8386513382655567147"
+      "templateHash": "9118186570073672851"
     }
   },
   "parameters": {
@@ -47,7 +47,7 @@
           "osDisk": {
             "osType": "Linux",
             "managedDisk": {
-              "id": "[resourceId('Microsoft.Compute/disks', format('{0}-osdisk', parameters('vmName')))]"
+              "id": "[resourceId('Microsoft.Compute/disks', format('{0}_OsDisk_1_84b137d0ae6840658df7553f49ac6c93', parameters('vmName')))]"
             },
             "createOption": "Attach"
           }

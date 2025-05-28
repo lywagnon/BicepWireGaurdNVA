@@ -18,7 +18,7 @@ resource nic 'Microsoft.Network/networkInterfaces@2023-02-01' existing = {
 
 // Reference existing OS disk from Greenfield deployment
 resource osDisk 'Microsoft.Compute/disks@2022-07-02' existing = {
-  name: '${vmName}-osdisk'
+  name: '${vmName}_OsDisk_1_84b137d0ae6840658df7553f49ac6c93'
 }
 
 // Deploy VM using existing NIC and OS disk
