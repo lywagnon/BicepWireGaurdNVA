@@ -131,9 +131,12 @@ sudo chmod +x $CRON_SCRIPT
 
 echo "WireGuard installation and setup complete."
 
-# Copy the firstboot.sh script to /home/azureuser/
-sudo cp /c:/Users/aarosanders/Desktop/wiregaurdNVA/new/firstboot.sh /home/azureuser/
-sudo chown azureuser:azureuser /home/azureuser/firstboot.sh
+# Copy the firstboot.sh script to /home/azureuser/ only if not already running from there
+SCRIPT_PATH="$(readlink -f "$0")"
+if [[ "$SCRIPT_PATH" != "/home/azureuser/firstboot.sh" ]]; then
+    sudo cp /c:/Users/aarosanders/Desktop/wiregaurdNVA/new/firstboot.sh /home/azureuser/
+    sudo chown azureuser:azureuser /home/azureuser/firstboot.sh
+fi
 
 
 # End of script
