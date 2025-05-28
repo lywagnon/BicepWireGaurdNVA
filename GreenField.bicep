@@ -2,13 +2,13 @@
 var vnetName = 'WGNVA-VNet'
 
 @description('Address space for the Virtual Network')
-var vnetAddressSpace = '100.127.0.0/24'
+var vnetAddressSpace = '10.0.0.0/22'
 
 @description('Subnet name')
 var subnetName = 'WGNVA'
 
 @description('Subnet address prefix')
-var subnetAddressPrefix  = '100.127.0.0/24'
+var subnetAddressPrefix  = '10.0.0.0/27'
 
 @description('Name of the existing Key Vault')
 param keyVaultName string = 'Vault-o-Secrets'
