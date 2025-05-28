@@ -245,6 +245,7 @@ resource vm 'Microsoft.Compute/virtualMachines@2023-03-01' = {
   }
   dependsOn: [
     keyVaultPrivateEndpoint
+    keyVaultDnsZoneVnetLink
   ]
   properties: {
     hardwareProfile: {

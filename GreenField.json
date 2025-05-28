@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "409521654537841837"
+      "templateHash": "8113693980487984141"
     }
   },
   "parameters": {
@@ -327,6 +327,7 @@
         }
       },
       "dependsOn": [
+        "[resourceId('Microsoft.Network/privateDnsZones/virtualNetworkLinks', 'privatelink.vaultcore.azure.net', format('{0}-link', 'privatelink.vaultcore.azure.net'))]",
         "[resourceId('Microsoft.Network/privateEndpoints', 'kv-private-endpoint')]",
         "[resourceId('Microsoft.Network/networkInterfaces', format('{0}-nic', parameters('vmName')))]",
         "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'WireGaurdNVAMI')]"
