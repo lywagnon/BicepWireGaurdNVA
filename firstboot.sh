@@ -64,10 +64,10 @@ if [[ "$SCRIPT_PATH" == "/home/azureuser/firstboot.sh" ]]; then
         exit 1
     fi
 else
-    # Generate WireGuard keys
-    read -n 1 -s -r -p "Running for the First Time. Generating WireGuard keys. Press any key to continue..."
-    echo
-
+    # # Generate WireGuard keys
+    # read -n 1 -s -r -p "Running for the First Time. Generating WireGuard keys. Press any key to continue..."
+    # echo
+    echo "Generating new WireGuard keys..."
     wg genkey | sudo tee /etc/wireguard/privatekey >/dev/null
     sudo chmod 600 /etc/wireguard/privatekey
     sudo cat /etc/wireguard/privatekey | wg pubkey | sudo tee /etc/wireguard/publickey >/dev/null
@@ -76,14 +76,14 @@ else
     # Store the new public key in Azure Key Vault
     VM_PUBLIC_KEY=$(cat /etc/wireguard/publickey)
     if [[ -n "$VM_PUBLIC_KEY" ]]; then
-        az keyvault secret set --vault-name "$KEYVAULT_NAME" --name "${VM_NAME}-publickey" --value "$VM_PUBLIC_KEY"
+        az keyvault secret set --vault-name "$KEYVAULT_NAME" --name "${VM_NAME}-publickey" --value "$VM_PUBLIC_KEY" >/dev/null
         echo "Stored VM public key in Key Vault."
     fi
 
     # Store the new private key in Azure Key Vault
     VM_PRIVATE_KEY=$(cat /etc/wireguard/privatekey)
     if [[ -n "$VM_PRIVATE_KEY" ]]; then
-        az keyvault secret set --vault-name "$KEYVAULT_NAME" --name "${VM_NAME}-privatekey" --value "$VM_PRIVATE_KEY"
+        az keyvault secret set --vault-name "$KEYVAULT_NAME" --name "${VM_NAME}-privatekey" --value "$VM_PRIVATE_KEY" >/dev/null
         echo "Stored VM private key in Key Vault."
     fi
 fi
@@ -145,26 +145,55 @@ else
     exit 1
 fi
 
-# # Create a cron job to check for the serverpublickey and update the config, only restart the service if key changes
-# CRON_SCRIPT="/usr/local/bin/update-wg-serverkey.sh"
-# sudo bash -c "cat > $CRON_SCRIPT << 'EOS'
-# #!/bin/bash
-# KEYVAULT_NAME=\"$KEYVAULT_NAME\"
-# SERVER_PUBLIC_KEY=\$(az keyvault secret show --vault-name \"\$KEYVAULT_NAME\" --name 'remoteserverpublickey' --query value -o tsv 2>/dev/null || echo \"\")
-# if [[ -n \"\$SERVER_PUBLIC_KEY\" ]]; then
-#     CURRENT_KEY_FILE=\"/etc/wireguard/remoteserverpublickey\"
-#     if [[ ! -f \"\$CURRENT_KEY_FILE\" ]] || [[ \"\$SERVER_PUBLIC_KEY\" != \"\$(cat \$CURRENT_KEY_FILE)\" ]]; then
-#         echo \"\$SERVER_PUBLIC_KEY\" | sudo tee \"\$CURRENT_KEY_FILE\" > /dev/null
-#         sudo systemctl restart wg-quick@wg0
-#     fi
-# fi
-# EOS"
+# Create a cron job to check for changes to the keys and update the config, only restart the service if key changes
+CRON_SCRIPT="/usr/local/bin/update-wg-serverkey.sh"
+sudo bash -c "cat > $CRON_SCRIPT << 'EOS'
+#!/bin/bash
+KEYVAULT_NAME=\"$KEYVAULT_NAME\"
+VM_NAME=\"$VM_NAME\"
+VM_PRIVATE_KEY=\$(az keyvault secret show --vault-name \"$KEYVAULT_NAME\" --name \"${VM_NAME}-privatekey\" --query value -o tsv 2>/dev/null || echo "")
+CURRENT_PRIVATE_KEY_FILE=\"/etc/wireguard/privatekey\"
+if [[ -n \"$VM_PRIVATE_KEY\" ]]; then
+    if [[ ! -f \"$CURRENT_PRIVATE_KEY_FILE\" ]] || [[ \"$VM_PRIVATE_KEY\" != \"\$(cat $CURRENT_PRIVATE_KEY_FILE)\" ]]; then
+        echo \"$VM_PRIVATE_KEY\" | sudo tee \"$CURRENT_PRIVATE_KEY_FILE\" > /dev/null
+        sudo chmod 600 \"$CURRENT_PRIVATE_KEY_FILE\"
+        RESTART_WG=1
+    fi
+fi
 
-# # Make the script executable
-# sudo chmod +x $CRON_SCRIPT
+VM_PUBLIC_KEY=\$(az keyvault secret show --vault-name \"$KEYVAULT_NAME\" --name \"${VM_NAME}-publickey\" --query value -o tsv 2>/dev/null || echo "")
+CURRENT_PUBLIC_KEY_FILE=\"/etc/wireguard/publickey\"
+if [[ -n \"$VM_PUBLIC_KEY\" ]]; then
+    if [[ ! -f \"$CURRENT_PUBLIC_KEY_FILE\" ]] || [[ \"$VM_PUBLIC_KEY\" != \"\$(cat $CURRENT_PUBLIC_KEY_FILE)\" ]]; then
+        echo \"$VM_PUBLIC_KEY\" | sudo tee \"$CURRENT_PUBLIC_KEY_FILE\" > /dev/null
+        sudo chmod 600 \"$CURRENT_PUBLIC_KEY_FILE\"
+        RESTART_WG=1
+    fi
+fi
 
-# # Add cron job to run every 15 minutes
-# ( sudo crontab -l 2>/dev/null; echo "*/15 * * * * $CRON_SCRIPT" ) | sudo crontab -
+SERVER_PUBLIC_KEY=\$(az keyvault secret show --vault-name \"$KEYVAULT_NAME\" --name 'remoteserverpublickey' --query value -o tsv 2>/dev/null || echo "")
+if [[ -n \"$SERVER_PUBLIC_KEY\" ]]; then
+    CURRENT_KEY_FILE=\"/etc/wireguard/remoteserverpublickey\"
+    if [[ ! -f \"$CURRENT_KEY_FILE\" ]] || [[ \"$SERVER_PUBLIC_KEY\" != \"\$(cat $CURRENT_KEY_FILE)\" ]]; then
+        echo \"$SERVER_PUBLIC_KEY\" | sudo tee \"$CURRENT_KEY_FILE\" > /dev/null
+        RESTART_WG=1
+    fi
+fi
+
+if [[ -n \"$RESTART_WG\" ]]; then
+    echo "Restarting WireGuard service due to key changes..."
+    sudo systemctl restart wg-quick@wg0
+else
+    echo "No key changes detected. WireGuard service remains running."
+fi
+echo "WireGuard keys updated and checked successfully."
+EOS"
+
+# Make the script executable
+sudo chmod +x $CRON_SCRIPT
+
+# Add cron job to run every 15 minutes
+( sudo crontab -l 2>/dev/null; echo "*/15 * * * * $CRON_SCRIPT" ) | sudo crontab -
 
 echo "WireGuard installation and setup complete."
 
@@ -175,9 +204,3 @@ if [[ "$SCRIPT_PATH" != "/home/azureuser/firstboot.sh" ]]; then
 fi
 
 # End of script
-# Note: This script assumes that the Azure Key Vault and the secrets are already set up.
-# It also assumes that the VM has a managed identity assigned to it.
-# Make sure to replace 'remoteserverpublickey' and 'remoterouter' with the actual names of your secrets in Key Vault.
-# The script also assumes that the WireGuard interface is named 'wg0'.
-# Adjust the IP addresses and network settings as per your requirements.
-# The script uses a placeholder for the remote server public key and router address if they are not found in Key Vault.
