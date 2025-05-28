@@ -1,5 +1,8 @@
 #!/bin/bash
 SCRIPT_PATH="$(readlink -f "$0")"
+# Record the script start time
+START_TIME=$(date +"%Y-%m-%d %H:%M:%S")
+echo "Script started at: $START_TIME"
 
 # Update and upgrade packages
 echo "Updating package list..."
@@ -14,6 +17,21 @@ sudo apt-get install -y wireguard
 # Install Azure CLI for Key Vault access
 echo "Installing Azure CLI..."
 curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+
+# Wait until 60 seconds have passed since script start time to allow managed identity to propagate
+START_EPOCH=$(date -d "$START_TIME" +%s)
+while true; do
+    NOW_EPOCH=$(date +%s)
+    ELAPSED=$((NOW_EPOCH - START_EPOCH))
+    if (( ELAPSED >= 60 )); then
+        echo "60 seconds have elapsed since script start. Continuing..."
+        break
+    else
+        REMAINING=$((60 - ELAPSED))
+        echo "Waiting for managed identity propagation... $REMAINING seconds remaining."
+        sleep 5
+    fi
+done
 
 # Login to Azure CLI using user assigned managed identity, tenant, and subscription
 echo "Logging in to Azure CLI with user assigned managed identity..."
@@ -58,6 +76,7 @@ if [[ -n "$VM_PRIVATE_KEY" && -n "$VM_PUBLIC_KEY" ]]; then
     sudo chmod 600 /etc/wireguard/privatekey
     echo "$VM_PUBLIC_KEY" | sudo tee /etc/wireguard/publickey >/dev/null
     sudo chmod 600 /etc/wireguard/publickey
+
 else
     echo "Unable to retrieve Secrets from KV"
     echo "Please ensure the secrets ${VM_NAME}-privatekey and ${VM_NAME}-publickey are set in Key Vault."
@@ -131,6 +150,9 @@ EOF"
 
 # Set permissions
 sudo chmod 600 /etc/wireguard/wg0.conf
+
+#restart wiregaurd service to apply new keys if it was already running
+sudo systemctl restart wg-quick@wg0 
 
 # Enable and start WireGuard
 echo "Enabling and starting WireGuard service..."
