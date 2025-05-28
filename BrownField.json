@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "9118186570073672851"
+      "templateHash": "13996447740249294965"
     }
   },
   "parameters": {
@@ -61,6 +61,12 @@
               }
             }
           ]
+        },
+        "diagnosticsProfile": {
+          "bootDiagnostics": {
+            "enabled": true,
+            "storageUri": null
+          }
         }
       }
     },
