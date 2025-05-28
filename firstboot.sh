@@ -42,13 +42,14 @@ fi
 read -n 1 -s -r -p "Press any key to continue..."
 echo
 
-# Check for Keys Stored in Key Vault, if script is running for the first time, generate keys and store them in Key Vault
-if [[ "$SCRIPT_PATH" != "/home/azureuser/firstboot.sh" ]]; then
-    # Try to get the private and public keys from Key Vault
-    echo "Trying to get the private and public keys from Key Vault..."
-    VM_PRIVATE_KEY=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name "${VM_NAME}-privatekey" --query value -o tsv 2>/dev/null || echo "")
-    VM_PUBLIC_KEY=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name "${VM_NAME}-publickey" --query value -o tsv 2>/dev/null || echo "")
+# Try to get the private and public keys from Key Vault
+echo "Trying to get the private and public keys from Key Vault..."
+VM_PRIVATE_KEY=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name "${VM_NAME}-privatekey" --query value -o tsv 2>/dev/null || echo "")
+VM_PUBLIC_KEY=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name "${VM_NAME}-publickey" --query value -o tsv 2>/dev/null || echo "")
 
+# if script is running for the first time, generate keys and store them in Key Vault
+if [[ "$SCRIPT_PATH" == "/home/azureuser/firstboot.sh" ]]; then
+    echo "Running for the first time. Checking for existing WireGuard keys in Key Vault..."
     if [[ -n "$VM_PRIVATE_KEY" && -n "$VM_PUBLIC_KEY" ]]; then
         echo "Found existing WireGuard keys in Key Vault. Writing to files..."
         echo "$VM_PRIVATE_KEY" | sudo tee /etc/wireguard/privatekey >/dev/null
@@ -57,11 +58,16 @@ if [[ "$SCRIPT_PATH" != "/home/azureuser/firstboot.sh" ]]; then
         sudo chmod 600 /etc/wireguard/publickey
     else
         echo "Unable to retrieve Secrets from KV"
+        echo "Please ensure the secrets ${VM_NAME}-privatekey and ${VM_NAME}-publickey are set in Key Vault."
+        echo "VM_PRIVATE_KEY: $VM_PRIVATE_KEY"
+        echo "VM_PUBLIC_KEY: $VM_PUBLIC_KEY"
         exit 1
     fi
 else
     # Generate WireGuard keys
-    echo "Generating WireGuard keys..."
+    read -n 1 -s -r -p "Running for the First Time. Generating WireGuard keys. Press any key to continue..."
+    echo
+    
     wg genkey | sudo tee /etc/wireguard/privatekey >/dev/null
     sudo chmod 600 /etc/wireguard/privatekey
     sudo cat /etc/wireguard/privatekey | wg pubkey | sudo tee /etc/wireguard/publickey >/dev/null
