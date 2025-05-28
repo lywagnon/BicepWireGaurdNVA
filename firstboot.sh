@@ -149,9 +149,11 @@ fi
 CRON_SCRIPT="/usr/local/bin/update-wg-serverkey.sh"
 sudo bash -c "cat > $CRON_SCRIPT << 'EOS'
 #!/bin/bash
+RESTART_WG=0
 KEYVAULT_NAME=\"$KEYVAULT_NAME\"
 VM_NAME=\"$VM_NAME\"
 VM_PRIVATE_KEY=\$(az keyvault secret show --vault-name \"$KEYVAULT_NAME\" --name \"${VM_NAME}-privatekey\" --query value -o tsv 2>/dev/null || echo "")
+
 CURRENT_PRIVATE_KEY_FILE=\"/etc/wireguard/privatekey\"
 if [[ -n \"$VM_PRIVATE_KEY\" ]]; then
     if [[ ! -f \"$CURRENT_PRIVATE_KEY_FILE\" ]] || [[ \"$VM_PRIVATE_KEY\" != \"\$(cat $CURRENT_PRIVATE_KEY_FILE)\" ]]; then
