@@ -38,6 +38,9 @@ else
     echo "Key Vault Name: $KEYVAULT_NAME"
     echo "Script Path: $SCRIPT_PATH"
 fi
+# Pause and wait for user to press any key before continuing
+read -n 1 -s -r -p "Press any key to continue..."
+echo
 
 # Check for Keys Stored in Key Vault, if script is running for the first time, generate keys and store them in Key Vault
 if [[ "$SCRIPT_PATH" != "/home/azureuser/firstboot.sh" ]]; then
