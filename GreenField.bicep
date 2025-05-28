@@ -50,12 +50,15 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' = {
     accessPolicies: []
     enableSoftDelete: true
     enablePurgeProtection: true
-    enableRbacAuthorization: false
+    enableRbacAuthorization: true
     publicNetworkAccess: 'Disabled'
     networkAcls: {
       bypass: 'AzureServices'
       defaultAction: 'Allow'
     }
+    enabledForDeployment: true // Enable for ARM deployment
+    enabledForTemplateDeployment: true // Enable for ARM template deployment
+    enabledForDiskEncryption: false // Optional, set true if needed for disk encryption
   }
 }
 
