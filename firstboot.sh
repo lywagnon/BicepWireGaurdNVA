@@ -145,18 +145,23 @@ else
     exit 1
 fi
 
-# Create a cron job to check for changes to the keys and update the config, only restart the service if key changes
+# Download the update-wg-key.sh script to /home/azureuser/
+USER_SCRIPT="/home/azureuser/update-wg-key.sh"
 CRON_SCRIPT="/usr/local/bin/update-wg-key.sh"
-sudo curl -fsSL https://raw.githubusercontent.com/MicrosoftAzureAaron/BicepWireGaurdNVA/refs/heads/main/update-wg-key.sh -o $CRON_SCRIPT
+curl -fsSL https://raw.githubusercontent.com/MicrosoftAzureAaron/BicepWireGaurdNVA/refs/heads/main/update-wg-key.sh -o "$USER_SCRIPT"
+sudo chown azureuser:azureuser "$USER_SCRIPT"
+sudo chmod +x "$USER_SCRIPT"
 
-# Make the script executable
-sudo chmod +x $CRON_SCRIPT
+# If you know your cron setup requires /usr/local/bin, uncomment below:
+sudo mv "$USER_SCRIPT" "$CRON_SCRIPT"
+sudo chmod +x "$CRON_SCRIPT"
+CRON_TARGET="$CRON_SCRIPT"
 
 # Add cron job to run every 15 minutes, ensuring no duplicates
 # Remove any existing cron jobs for this script
-sudo crontab -l 2>/dev/null | grep -v "$CRON_SCRIPT" | sudo crontab -
+sudo crontab -l 2>/dev/null | grep -v "$CRON_TARGET" | sudo crontab -
 # Add the new cron job
-( sudo crontab -l 2>/dev/null; echo "*/15 * * * * $CRON_SCRIPT" ) | sudo crontab -
+( sudo crontab -l 2>/dev/null; echo "*/15 * * * * $CRON_TARGET" ) | sudo crontab -
 
 echo "WireGuard installation and setup complete."
 
