@@ -2,7 +2,7 @@
 var vnetName = 'WGNVA-VNet'
 
 @description('Address space for the Virtual Network')
-var vnetAddressSpace = '10.10.0.0/20'
+var vnetAddressSpace = '10.0.0.0/20'
 
 @description('Subnet name')
 var subnetName = 'WGNVA'
