@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "3727351535454379653"
+      "templateHash": "4419525528203338189"
     }
   },
   "parameters": {
@@ -140,7 +140,6 @@
             "name": "kvPrivateEndpointIPConfig",
             "properties": {
               "privateIPAddress": "100.127.0.254",
-              "privateIPAllocationMethod": "Static",
               "groupId": "vault",
               "memberName": "default"
             }

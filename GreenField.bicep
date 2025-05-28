@@ -112,7 +112,6 @@ resource keyVaultPrivateEndpoint 'Microsoft.Network/privateEndpoints@2023-02-01'
         name: 'kvPrivateEndpointIPConfig'
         properties: {
           privateIPAddress: '100.127.0.254'
-          privateIPAllocationMethod: 'Static'
           groupId: 'vault'
           memberName: 'default'
         }
