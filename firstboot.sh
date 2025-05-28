@@ -49,7 +49,7 @@ VM_PUBLIC_KEY=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name "${
 
 # if script is running for the first time, generate keys and store them in Key Vault
 if [[ "$SCRIPT_PATH" == "/home/azureuser/firstboot.sh" ]]; then
-    echo "Running for the first time. Checking for existing WireGuard keys in Key Vault..."
+    echo "Not in custom script path. Checking for existing WireGuard keys in Key Vault..."
     if [[ -n "$VM_PRIVATE_KEY" && -n "$VM_PUBLIC_KEY" ]]; then
         echo "Found existing WireGuard keys in Key Vault. Writing to files..."
         echo "$VM_PRIVATE_KEY" | sudo tee /etc/wireguard/privatekey >/dev/null
@@ -180,14 +180,15 @@ if [[ -n \"$SERVER_PUBLIC_KEY\" ]]; then
     fi
 fi
 
-if [[$RESTART_WG]]; then
+if [[ -n \"$RESTART_WG\" ]]; then
     echo \"Restarting WireGuard service due to key changes...\"
     sudo systemctl restart wg-quick@wg0
 else
     echo \"No key changes detected. WireGuard service remains running.\"
 fi
 echo \"WireGuard keys checked successfully.\"
-EOS"
+EOS
+"
 
 # Make the script executable
 sudo chmod +x $CRON_SCRIPT
