@@ -153,42 +153,40 @@ RESTART_WG=0
 KEYVAULT_NAME=\"$KEYVAULT_NAME\"
 VM_NAME=\"$VM_NAME\"
 
+# Compare and update private key
 VM_PRIVATE_KEY=\$(az keyvault secret show --vault-name \"$KEYVAULT_NAME\" --name \"${VM_NAME}-privatekey\" --query value -o tsv 2>/dev/null || echo "")
-if [[ -n \"$VM_PRIVATE_KEY\" ]]; then
-    CURRENT_PRIVATE_KEY_FILE=\"/etc/wireguard/privatekey\"
-    if [[ ! -f \"$CURRENT_PRIVATE_KEY_FILE\" ]] || [[ \"$VM_PRIVATE_KEY\" != \"\$(cat $CURRENT_PRIVATE_KEY_FILE)\" ]]; then
-        echo \"$VM_PRIVATE_KEY\" | sudo tee \"$CURRENT_PRIVATE_KEY_FILE\" > /dev/null
-        sudo chmod 600 \"$CURRENT_PRIVATE_KEY_FILE\"
-        RESTART_WG=1
-    fi
+CURRENT_PRIVATE_KEY=\$(cat /etc/wireguard/privatekey 2>/dev/null || echo "")
+if [[ \"$VM_PRIVATE_KEY\" != \"$CURRENT_PRIVATE_KEY\" && -n \"$VM_PRIVATE_KEY\" ]]; then
+    echo \"$VM_PRIVATE_KEY\" | sudo tee /etc/wireguard/privatekey > /dev/null
+    sudo chmod 600 /etc/wireguard/privatekey
+    RESTART_WG=1
 fi
 
+# Compare and update public key
 VM_PUBLIC_KEY=\$(az keyvault secret show --vault-name \"$KEYVAULT_NAME\" --name \"${VM_NAME}-publickey\" --query value -o tsv 2>/dev/null || echo "")
-if [[ -n \"$VM_PUBLIC_KEY\" ]]; then
-    CURRENT_PUBLIC_KEY_FILE=\"/etc/wireguard/publickey\"
-    if [[ ! -f \"$CURRENT_PUBLIC_KEY_FILE\" ]] || [[ \"$VM_PUBLIC_KEY\" != \"\$(cat $CURRENT_PUBLIC_KEY_FILE)\" ]]; then
-        echo \"$VM_PUBLIC_KEY\" | sudo tee \"$CURRENT_PUBLIC_KEY_FILE\" > /dev/null
-        sudo chmod 600 \"$CURRENT_PUBLIC_KEY_FILE\"
-        RESTART_WG=1
-    fi
+CURRENT_PUBLIC_KEY=\$(cat /etc/wireguard/publickey 2>/dev/null || echo "")
+if [[ \"$VM_PUBLIC_KEY\" != \"$CURRENT_PUBLIC_KEY\" && -n \"$VM_PUBLIC_KEY\" ]]; then
+    echo \"$VM_PUBLIC_KEY\" | sudo tee /etc/wireguard/publickey > /dev/null
+    sudo chmod 600 /etc/wireguard/publickey
+    RESTART_WG=1
 fi
 
+# Compare and update remote server public key
 SERVER_PUBLIC_KEY=\$(az keyvault secret show --vault-name \"$KEYVAULT_NAME\" --name 'remoteserverpublickey' --query value -o tsv 2>/dev/null || echo "")
-if [[ -n \"$SERVER_PUBLIC_KEY\" ]]; then
-    CURRENT_KEY_FILE=\"/etc/wireguard/remoteserverpublickey\"
-    if [[ ! -f \"$CURRENT_KEY_FILE\" ]] || [[ \"$SERVER_PUBLIC_KEY\" != \"\$(cat $CURRENT_KEY_FILE)\" ]]; then
-        echo \"$SERVER_PUBLIC_KEY\" | sudo tee \"$CURRENT_KEY_FILE\" > /dev/null
-        RESTART_WG=1
-    fi
+CURRENT_SERVER_KEY=\$(cat /etc/wireguard/remoteserverpublickey 2>/dev/null || echo "")
+if [[ \"$SERVER_PUBLIC_KEY\" != \"$CURRENT_SERVER_KEY\" && -n \"$SERVER_PUBLIC_KEY\" ]]; then
+    echo \"$SERVER_PUBLIC_KEY\" | sudo tee /etc/wireguard/remoteserverpublickey > /dev/null
+    sudo chmod 600 /etc/wireguard/remoteserverpublickey
+    RESTART_WG=1
 fi
 
-if [[ -n \"$RESTART_WG\" ]]; then
-    echo \"Restarting WireGuard service due to key changes...\"
+if [[ $RESTART_WG -eq 1 ]]; then
+    echo "Restarting WireGuard service due to key changes..."
     sudo systemctl restart wg-quick@wg0
 else
-    echo \"No key changes detected. WireGuard service remains running.\"
+    echo "No key changes detected. WireGuard service remains running."
 fi
-echo \"WireGuard keys checked successfully.\"
+echo "WireGuard keys checked successfully."
 EOS
 "
 
