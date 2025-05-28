@@ -76,43 +76,51 @@ if [[ -n "$VM_PRIVATE_KEY" && -n "$VM_PUBLIC_KEY" ]]; then
     sudo chmod 600 /etc/wireguard/privatekey
     echo "$VM_PUBLIC_KEY" | sudo tee /etc/wireguard/publickey >/dev/null
     sudo chmod 600 /etc/wireguard/publickey
-
 else
     echo "Unable to retrieve Secrets from KV"
-    echo "Please ensure the secrets ${VM_NAME}-privatekey and ${VM_NAME}-publickey are set in Key Vault."
-    echo "VM_PRIVATE_KEY: $VM_PRIVATE_KEY"
-    echo "VM_PUBLIC_KEY: $VM_PUBLIC_KEY"
-    exit 1
-fi
-
-if [[ "$SCRIPT_PATH" == "/home/azureuser/firstboot.sh" ]]; then
-    echo "Not in custom script path. Checking for existing WireGuard keys in Key Vault..."
-    # # Generate WireGuard keys
-    # read -n 1 -s -r -p "Running for the First Time. Generating WireGuard keys. Press any key to continue..."
-    # echo
+    echo "Either the keys do not exist in Key Vault or there was an error retrieving them."
     echo "Generating new WireGuard keys..."
+
     wg genkey | sudo tee /etc/wireguard/privatekey >/dev/null
     sudo chmod 600 /etc/wireguard/privatekey
+
     sudo cat /etc/wireguard/privatekey | wg pubkey | sudo tee /etc/wireguard/publickey >/dev/null
     sudo chmod 600 /etc/wireguard/publickey
+
+    echo "You can overwrite the keys in Key Vault with the new ones if needed."
 
     # Store the new public key in Azure Key Vault
     VM_PUBLIC_KEY=$(cat /etc/wireguard/publickey)
     if [[ -n "$VM_PUBLIC_KEY" ]]; then
         az keyvault secret set --vault-name "$KEYVAULT_NAME" --name "${VM_NAME}-publickey" --value "$VM_PUBLIC_KEY" >/dev/null
+        if [[ $? -ne 0 ]]; then
+            echo "ERROR: Failed to store VM public key in Key Vault."
+            exit 1
+        fi
         echo "Stored VM public key in Key Vault."
+        echo "VM_PUBLIC_KEY: $VM_PUBLIC_KEY"
     fi
 
     # Store the new private key in Azure Key Vault
     VM_PRIVATE_KEY=$(cat /etc/wireguard/privatekey)
     if [[ -n "$VM_PRIVATE_KEY" ]]; then
         az keyvault secret set --vault-name "$KEYVAULT_NAME" --name "${VM_NAME}-privatekey" --value "$VM_PRIVATE_KEY" >/dev/null
+        if [[ $? -ne 0 ]]; then
+            echo "ERROR: Failed to store VM private key in Key Vault."
+            exit 1
+        fi
         echo "Stored VM private key in Key Vault."
+        echo "VM_PRIVATE_KEY: $VM_PRIVATE_KEY"
     fi
 fi
 
 # Try to get the server public key from Key Vault
 REMOTE_SERVER_PUBLIC_KEY=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name 'remoteserverpublickey' --query value -o tsv 2>/dev/null || echo "")
+if [[ $? -ne 0 ]]; then
+    echo "ERROR: Failed to retrieve remoteserverpublickey from Key Vault."
+    exit 1
+fi
+
 if [[ -n "$REMOTE_SERVER_PUBLIC_KEY" ]]; then
     sudo mkdir -p /etc/wireguard
     echo "$REMOTE_SERVER_PUBLIC_KEY" | sudo tee /etc/wireguard/remoteserverpublickey > /dev/null
@@ -124,8 +132,14 @@ fi
 
 # Try to get the server public key from Key Vault
 REMOTE_ROUTER=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name 'remoterouter' --query value -o tsv 2>/dev/null || echo "")
-if [[ -z "$REMOTE_ROUTER" ]]; then
-    echo "No remoterouter found in Key Vault. Please ensure it is set up. IP:PORT or FQDN:PORT"
+if [[ $? -ne 0 ]]; then
+    echo "ERROR: Failed to retrieve remoterouter from Key Vault. IP:PORT or FQDN:PORT"
+    exit 1
+fi
+
+# Validate REMOTE_ROUTER is in IP:PORT or FQDN:PORT format
+if ! [[ "$REMOTE_ROUTER" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}:[0-9]{1,5}$ || "$REMOTE_ROUTER" =~ ^([a-zA-Z0-9.-]+):[0-9]{1,5}$ ]]; then
+    echo "ERROR: remoterouter value '$REMOTE_ROUTER' is not a valid IP:PORT or FQDN:PORT."
     exit 1
 fi
 
