@@ -59,6 +59,16 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-02-01' = {
   }
 }
 
+// add resource lock to Key Vault
+resource keyVaultDeleteLock 'Microsoft.Authorization/locks@2020-05-01' = {
+  name: '${keyVault.name}-delete-lock'
+  scope: keyVault
+  properties: {
+    level: 'CanNotDelete'
+    notes: 'Prevents accidental deletion of the Key Vault.'
+  }
+}
+
 // Create Private DNS Zone for Key Vault
 resource keyVaultPrivateDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
   name: 'privatelink.vaultcore.azure.net'
