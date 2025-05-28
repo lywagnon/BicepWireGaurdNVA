@@ -17,7 +17,11 @@ curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 
 # Login to Azure CLI using user assigned managed identity, tenant, and subscription
 echo "Logging in to Azure CLI with user assigned managed identity..."
-az login --identity --allow-no-subscriptions
+AZ_LOGIN_OUTPUT=$(az login --identity --allow-no-subscriptions)
+if [[ -z "$AZ_LOGIN_OUTPUT" ]]; then
+    echo "ERROR: az login did not return any output. Exiting."
+    exit 1
+fi
 
 # Get Key Vault info
 VM_NAME=$(curl -H "Metadata:true" --noproxy '*' "http://169.254.169.254/metadata/instance/compute/name?api-version=2021-02-01&format=text")
@@ -28,13 +32,16 @@ KEYVAULT_NAME=$(az keyvault list --resource-group "$RESOURCE_GROUP" --query '[0]
 if [[ -z "$VM_NAME" || -z "$RESOURCE_GROUP" || -z "$KEYVAULT_NAME" ]]; then
     echo "ERROR: One or more required variables (VM_NAME, RESOURCE_GROUP, KEYVAULT_NAME) are empty. Exiting."
     exit 1
+else
+    echo "VM Name: $VM_NAME"
+    echo "Resource Group: $RESOURCE_GROUP"
+    echo "Key Vault Name: $KEYVAULT_NAME"
 fi
-
-
 
 # Check for Keys Stored in Key Vault, if script is running for the first time, generate keys and store them in Key Vault
 if [[ "$SCRIPT_PATH" != "/home/azureuser/firstboot.sh" ]]; then
     # Try to get the private and public keys from Key Vault
+    echo "Trying to get the private and public keys from Key Vault..."
     VM_PRIVATE_KEY=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name "${VM_NAME}-privatekey" --query value -o tsv 2>/dev/null || echo "")
     VM_PUBLIC_KEY=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name "${VM_NAME}-publickey" --query value -o tsv 2>/dev/null || echo "")
 
