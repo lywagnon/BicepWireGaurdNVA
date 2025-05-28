@@ -243,6 +243,9 @@ resource vm 'Microsoft.Compute/virtualMachines@2023-03-01' = {
       '${userAssignedIdentity.id}': {}
     }
   }
+  dependsOn: [
+    keyVaultPrivateEndpoint
+  ]
   properties: {
     hardwareProfile: {
       vmSize: vmSku
