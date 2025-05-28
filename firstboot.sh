@@ -36,6 +36,7 @@ else
     echo "VM Name: $VM_NAME"
     echo "Resource Group: $RESOURCE_GROUP"
     echo "Key Vault Name: $KEYVAULT_NAME"
+    echo "Script Path: $SCRIPT_PATH"
 fi
 
 # Check for Keys Stored in Key Vault, if script is running for the first time, generate keys and store them in Key Vault
