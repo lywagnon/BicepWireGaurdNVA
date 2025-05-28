@@ -147,7 +147,7 @@ fi
 
 # Create a cron job to check for changes to the keys and update the config, only restart the service if key changes
 CRON_SCRIPT="/usr/local/bin/update-wg-key.sh"
-sudo curl -fsSL https://raw.githubusercontent.com/aaronsaikovski/wireguard-nva/main/update-wg-key.sh -o $CRON_SCRIPT
+sudo curl -fsSL https://raw.githubusercontent.com/MicrosoftAzureAaron/BicepWireGaurdNVA/refs/heads/main/update-wg-key.sh -o $CRON_SCRIPT
 
 # Make the script executable
 sudo chmod +x $CRON_SCRIPT
