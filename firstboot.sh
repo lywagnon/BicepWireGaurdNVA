@@ -172,3 +172,5 @@ if [[ "$SCRIPT_PATH" != "/home/azureuser/firstboot.sh" ]]; then
 fi
 
 # End of script
+
+# add curls for firstboot.sh and update-wg-key.sh into cron job so that if github updates the scripts should also update
