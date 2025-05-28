@@ -1,4 +1,5 @@
 #!/bin/bash
+SCRIPT_PATH="$(readlink -f "$0")"
 
 # Update and upgrade packages
 echo "Updating package list..."
@@ -23,16 +24,30 @@ VM_NAME=$(curl -H "Metadata:true" --noproxy '*' "http://169.254.169.254/metadata
 RESOURCE_GROUP=$(curl -H "Metadata:true" --noproxy '*' "http://169.254.169.254/metadata/instance/compute/resourceGroupName?api-version=2021-02-01&format=text")
 KEYVAULT_NAME=$(az keyvault list --resource-group "$RESOURCE_GROUP" --query '[0].name' -o tsv)
 
-# Try to get the private and public keys from Key Vault
-VM_PRIVATE_KEY=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name "${VM_NAME}-privatekey" --query value -o tsv 2>/dev/null || echo "")
-VM_PUBLIC_KEY=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name "${VM_NAME}-publickey" --query value -o tsv 2>/dev/null || echo "")
+# Check that required variables are not blank or empty
+if [[ -z "$VM_NAME" || -z "$RESOURCE_GROUP" || -z "$KEYVAULT_NAME" ]]; then
+    echo "ERROR: One or more required variables (VM_NAME, RESOURCE_GROUP, KEYVAULT_NAME) are empty. Exiting."
+    exit 1
+fi
 
-if [[ -n "$VM_PRIVATE_KEY" && -n "$VM_PUBLIC_KEY" ]]; then
-    echo "Found existing WireGuard keys in Key Vault. Writing to files..."
-    echo "$VM_PRIVATE_KEY" | sudo tee /etc/wireguard/privatekey >/dev/null
-    sudo chmod 600 /etc/wireguard/privatekey
-    echo "$VM_PUBLIC_KEY" | sudo tee /etc/wireguard/publickey >/dev/null
-    sudo chmod 600 /etc/wireguard/publickey
+
+
+# Check for Keys Stored in Key Vault, if script is running for the first time, generate keys and store them in Key Vault
+if [[ "$SCRIPT_PATH" != "/home/azureuser/firstboot.sh" ]]; then
+    # Try to get the private and public keys from Key Vault
+    VM_PRIVATE_KEY=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name "${VM_NAME}-privatekey" --query value -o tsv 2>/dev/null || echo "")
+    VM_PUBLIC_KEY=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name "${VM_NAME}-publickey" --query value -o tsv 2>/dev/null || echo "")
+
+    if [[ -n "$VM_PRIVATE_KEY" && -n "$VM_PUBLIC_KEY" ]]; then
+        echo "Found existing WireGuard keys in Key Vault. Writing to files..."
+        echo "$VM_PRIVATE_KEY" | sudo tee /etc/wireguard/privatekey >/dev/null
+        sudo chmod 600 /etc/wireguard/privatekey
+        echo "$VM_PUBLIC_KEY" | sudo tee /etc/wireguard/publickey >/dev/null
+        sudo chmod 600 /etc/wireguard/publickey
+    else
+        echo "Unable to retrieve Secrets from KV"
+        exit 1
+    fi
 else
     # Generate WireGuard keys
     echo "Generating WireGuard keys..."
@@ -61,6 +76,12 @@ REMOTE_SERVER_PUBLIC_KEY=$(az keyvault secret show --vault-name "$KEYVAULT_NAME"
 if [[ -n "$REMOTE_SERVER_PUBLIC_KEY" ]]; then
     sudo mkdir -p /etc/wireguard
     echo "$REMOTE_SERVER_PUBLIC_KEY" | sudo tee /etc/wireguard/remoteserverpublickey > /dev/null
+    sudo chmod 600 /etc/wireguard/remoteserverpublickey
+else
+    echo "No remote server public key found in Key Vault. Please ensure it is set up."
+    # Optionally, you can exit or continue with a placeholder
+    echo "Using placeholder for remote server public key."
+    echo "PLACEHOLDER" | sudo tee /etc/wireguard/remoteserverpublickey > /dev/null
     sudo chmod 600 /etc/wireguard/remoteserverpublickey
 fi
 
@@ -132,7 +153,6 @@ sudo chmod +x $CRON_SCRIPT
 echo "WireGuard installation and setup complete."
 
 # Copy the firstboot.sh script to /home/azureuser/ only if not already running from there
-SCRIPT_PATH="$(readlink -f "$0")"
 if [[ "$SCRIPT_PATH" != "/home/azureuser/firstboot.sh" ]]; then
     sudo cp /c:/Users/aarosanders/Desktop/wiregaurdNVA/new/firstboot.sh /home/azureuser/
     sudo chown azureuser:azureuser /home/azureuser/firstboot.sh
