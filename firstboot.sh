@@ -180,13 +180,13 @@ if [[ -n \"$SERVER_PUBLIC_KEY\" ]]; then
     fi
 fi
 
-if [[ -n \"$RESTART_WG\" ]]; then
-    echo "Restarting WireGuard service due to key changes..."
+if [[$RESTART_WG]]; then
+    echo \"Restarting WireGuard service due to key changes...\"
     sudo systemctl restart wg-quick@wg0
 else
-    echo "No key changes detected. WireGuard service remains running."
+    echo \"No key changes detected. WireGuard service remains running.\"
 fi
-echo "WireGuard keys updated and checked successfully."
+echo \"WireGuard keys checked successfully.\"
 EOS"
 
 # Make the script executable
