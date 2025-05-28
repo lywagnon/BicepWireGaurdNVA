@@ -152,10 +152,10 @@ sudo bash -c "cat > $CRON_SCRIPT << 'EOS'
 RESTART_WG=0
 KEYVAULT_NAME=\"$KEYVAULT_NAME\"
 VM_NAME=\"$VM_NAME\"
-VM_PRIVATE_KEY=\$(az keyvault secret show --vault-name \"$KEYVAULT_NAME\" --name \"${VM_NAME}-privatekey\" --query value -o tsv 2>/dev/null || echo "")
 
-CURRENT_PRIVATE_KEY_FILE=\"/etc/wireguard/privatekey\"
+VM_PRIVATE_KEY=\$(az keyvault secret show --vault-name \"$KEYVAULT_NAME\" --name \"${VM_NAME}-privatekey\" --query value -o tsv 2>/dev/null || echo "")
 if [[ -n \"$VM_PRIVATE_KEY\" ]]; then
+    CURRENT_PRIVATE_KEY_FILE=\"/etc/wireguard/privatekey\"
     if [[ ! -f \"$CURRENT_PRIVATE_KEY_FILE\" ]] || [[ \"$VM_PRIVATE_KEY\" != \"\$(cat $CURRENT_PRIVATE_KEY_FILE)\" ]]; then
         echo \"$VM_PRIVATE_KEY\" | sudo tee \"$CURRENT_PRIVATE_KEY_FILE\" > /dev/null
         sudo chmod 600 \"$CURRENT_PRIVATE_KEY_FILE\"
@@ -164,8 +164,8 @@ if [[ -n \"$VM_PRIVATE_KEY\" ]]; then
 fi
 
 VM_PUBLIC_KEY=\$(az keyvault secret show --vault-name \"$KEYVAULT_NAME\" --name \"${VM_NAME}-publickey\" --query value -o tsv 2>/dev/null || echo "")
-CURRENT_PUBLIC_KEY_FILE=\"/etc/wireguard/publickey\"
 if [[ -n \"$VM_PUBLIC_KEY\" ]]; then
+    CURRENT_PUBLIC_KEY_FILE=\"/etc/wireguard/publickey\"
     if [[ ! -f \"$CURRENT_PUBLIC_KEY_FILE\" ]] || [[ \"$VM_PUBLIC_KEY\" != \"\$(cat $CURRENT_PUBLIC_KEY_FILE)\" ]]; then
         echo \"$VM_PUBLIC_KEY\" | sudo tee \"$CURRENT_PUBLIC_KEY_FILE\" > /dev/null
         sudo chmod 600 \"$CURRENT_PUBLIC_KEY_FILE\"
