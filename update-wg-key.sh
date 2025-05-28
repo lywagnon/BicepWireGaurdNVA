@@ -34,6 +34,24 @@ if [[ "$SERVER_PUBLIC_KEY" != "$CURRENT_SERVER_KEY" && -n "$SERVER_PUBLIC_KEY" ]
 fi
 
 if [[ $RESTART_WG -eq 1 ]]; then
+    # Create WireGuard configuration file
+    echo "Creating WireGuard configuration file..."
+    sudo bash -c "cat > /etc/wireguard/wg0.conf << EOF
+    [Interface]
+    MTU = 1420
+    PrivateKey = $(cat /etc/wireguard/privatekey)
+    Address = 192.168.2.7/32 #tunnel interface
+    PostUp = iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+    PostUp = sysctl -w net.ipv4.ip_forward=1
+    PostDown = iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
+    PostDown = sysctl -w net.ipv4.ip_forward=0
+
+    [Peer]
+    PublicKey = $(cat /etc/wireguard/remoteserverpublickey 2>/dev/null || echo "PLACEHOLDER")
+    Endpoint = ${REMOTE_ROUTER:-PLACEHOLDER}
+    AllowedIPs = 192.168.1.0/24
+    PersistentKeepalive = 25
+    EOF"
     echo "[update-wg-key.sh] Restarting WireGuard service due to key changes..."
     sudo systemctl restart wg-quick@wg0
 else
