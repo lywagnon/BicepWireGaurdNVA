@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "3039049644924692100"
+      "templateHash": "3727351535454379653"
     }
   },
   "parameters": {
@@ -81,6 +81,19 @@
       }
     },
     {
+      "type": "Microsoft.Authorization/locks",
+      "apiVersion": "2020-05-01",
+      "scope": "[format('Microsoft.KeyVault/vaults/{0}', parameters('keyVaultName'))]",
+      "name": "[format('{0}-delete-lock', parameters('keyVaultName'))]",
+      "properties": {
+        "level": "CanNotDelete",
+        "notes": "Prevents accidental deletion of the Key Vault."
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"
+      ]
+    },
+    {
       "type": "Microsoft.Network/privateDnsZones",
       "apiVersion": "2020-06-01",
       "name": "privatelink.vaultcore.azure.net",
@@ -126,7 +139,10 @@
           {
             "name": "kvPrivateEndpointIPConfig",
             "properties": {
-              "privateIPAddress": "100.127.0.254"
+              "privateIPAddress": "100.127.0.254",
+              "privateIPAllocationMethod": "Static",
+              "groupId": "vault",
+              "memberName": "default"
             }
           }
         ]
