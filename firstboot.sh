@@ -79,16 +79,14 @@ if [[ -n "$REMOTE_SERVER_PUBLIC_KEY" ]]; then
     sudo chmod 600 /etc/wireguard/remoteserverpublickey
 else
     echo "No remote server public key found in Key Vault. Please ensure it is set up."
-    # Optionally, you can exit or continue with a placeholder
-    echo "Using placeholder for remote server public key."
-    echo "PLACEHOLDER" | sudo tee /etc/wireguard/remoteserverpublickey > /dev/null
-    sudo chmod 600 /etc/wireguard/remoteserverpublickey
+    exit 1
 fi
 
 # Try to get the server public key from Key Vault
 REMOTE_ROUTER=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name 'remoterouter' --query value -o tsv 2>/dev/null || echo "")
 if [[ -z "$REMOTE_ROUTER" ]]; then
-    echo "No remote server found in Key Vault."
+    echo "No remote server found in Key Vault. Please ensure it is set up, along with the remoteserverpublickey."
+    exit 1
 fi
 
 # Create WireGuard configuration file
@@ -127,28 +125,29 @@ if sudo wg show wg0 > /dev/null 2>&1; then
 else
     echo "WireGuard tunnel wg0 failed to start. Check configuration and logs."
     sudo systemctl status wg-quick@wg0 --no-pager
+    exit 1
 fi
 
-# Create a cron job to check for the serverpublickey and update the config, only restart the service if key changes
-CRON_SCRIPT="/usr/local/bin/update-wg-serverkey.sh"
-sudo bash -c "cat > $CRON_SCRIPT << 'EOS'
-#!/bin/bash
-KEYVAULT_NAME=\"$KEYVAULT_NAME\"
-SERVER_PUBLIC_KEY=\$(az keyvault secret show --vault-name \"\$KEYVAULT_NAME\" --name 'remoteserverpublickey' --query value -o tsv 2>/dev/null || echo \"\")
-if [[ -n \"\$SERVER_PUBLIC_KEY\" ]]; then
-    CURRENT_KEY_FILE=\"/etc/wireguard/remoteserverpublickey\"
-    if [[ ! -f \"\$CURRENT_KEY_FILE\" ]] || [[ \"\$SERVER_PUBLIC_KEY\" != \"\$(cat \$CURRENT_KEY_FILE)\" ]]; then
-        echo \"\$SERVER_PUBLIC_KEY\" | sudo tee \"\$CURRENT_KEY_FILE\" > /dev/null
-        sudo systemctl restart wg-quick@wg0
-    fi
-fi
-EOS"
+# # Create a cron job to check for the serverpublickey and update the config, only restart the service if key changes
+# CRON_SCRIPT="/usr/local/bin/update-wg-serverkey.sh"
+# sudo bash -c "cat > $CRON_SCRIPT << 'EOS'
+# #!/bin/bash
+# KEYVAULT_NAME=\"$KEYVAULT_NAME\"
+# SERVER_PUBLIC_KEY=\$(az keyvault secret show --vault-name \"\$KEYVAULT_NAME\" --name 'remoteserverpublickey' --query value -o tsv 2>/dev/null || echo \"\")
+# if [[ -n \"\$SERVER_PUBLIC_KEY\" ]]; then
+#     CURRENT_KEY_FILE=\"/etc/wireguard/remoteserverpublickey\"
+#     if [[ ! -f \"\$CURRENT_KEY_FILE\" ]] || [[ \"\$SERVER_PUBLIC_KEY\" != \"\$(cat \$CURRENT_KEY_FILE)\" ]]; then
+#         echo \"\$SERVER_PUBLIC_KEY\" | sudo tee \"\$CURRENT_KEY_FILE\" > /dev/null
+#         sudo systemctl restart wg-quick@wg0
+#     fi
+# fi
+# EOS"
 
-# Make the script executable
-sudo chmod +x $CRON_SCRIPT
+# # Make the script executable
+# sudo chmod +x $CRON_SCRIPT
 
-# Add cron job to run every 15 minutes
-( sudo crontab -l 2>/dev/null; echo "*/15 * * * * $CRON_SCRIPT" ) | sudo crontab -
+# # Add cron job to run every 15 minutes
+# ( sudo crontab -l 2>/dev/null; echo "*/15 * * * * $CRON_SCRIPT" ) | sudo crontab -
 
 echo "WireGuard installation and setup complete."
 
@@ -157,7 +156,6 @@ if [[ "$SCRIPT_PATH" != "/home/azureuser/firstboot.sh" ]]; then
     sudo cp /c:/Users/aarosanders/Desktop/wiregaurdNVA/new/firstboot.sh /home/azureuser/
     sudo chown azureuser:azureuser /home/azureuser/firstboot.sh
 fi
-
 
 # End of script
 # Note: This script assumes that the Azure Key Vault and the secrets are already set up.
