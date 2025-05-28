@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.35.1.17967",
-      "templateHash": "12339724663591363468"
+      "templateHash": "12948830682153880676"
     }
   },
   "parameters": {
@@ -15,28 +15,21 @@
       "metadata": {
         "description": "Select the VM SKU"
       }
-    },
-    "vmName": {
-      "type": "string",
-      "defaultValue": "WireGuardNVA",
-      "metadata": {
-        "description": "Name of the Virtual Machine"
-      }
     }
   },
   "variables": {
-    "userAssignedIdentityName": "WireGaurdNVAMI"
+    "vmName": "WireGuardNVA"
   },
   "resources": [
     {
       "type": "Microsoft.Compute/virtualMachines",
       "apiVersion": "2023-03-01",
-      "name": "[parameters('vmName')]",
+      "name": "[variables('vmName')]",
       "location": "[resourceGroup().location]",
       "identity": {
         "type": "UserAssigned",
         "userAssignedIdentities": {
-          "[format('{0}', resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('userAssignedIdentityName')))]": {}
+          "[format('{0}', resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'WireGaurdNVAMI'))]": {}
         }
       },
       "properties": {
@@ -55,7 +48,7 @@
         "networkProfile": {
           "networkInterfaces": [
             {
-              "id": "[resourceId('Microsoft.Network/networkInterfaces', format('{0}-nic', parameters('vmName')))]",
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', format('{0}-nic', variables('vmName')))]",
               "properties": {
                 "primary": true
               }
@@ -73,7 +66,7 @@
     {
       "type": "Microsoft.Compute/virtualMachines/extensions",
       "apiVersion": "2023-03-01",
-      "name": "[format('{0}/{1}', parameters('vmName'), 'customScript')]",
+      "name": "[format('{0}/{1}', variables('vmName'), 'customScript')]",
       "location": "[resourceGroup().location]",
       "properties": {
         "publisher": "Microsoft.Azure.Extensions",
@@ -88,7 +81,7 @@
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]"
+        "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
       ]
     }
   ]

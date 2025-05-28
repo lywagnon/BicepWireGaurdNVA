@@ -2,13 +2,13 @@
 param vmSku string = 'Standard_F2as_v6'
 
 @description('Name of the Virtual Machine')
-param vmName string = 'WireGuardNVA'
+var vmName = 'WireGuardNVA'
 
-@description('Name of the existing user-assigned managed identity')
-var userAssignedIdentityName = 'WireGaurdNVAMI'
+// @description('Name of the existing user-assigned managed identity')
+// var userAssignedIdentityName = 'WireGaurdNVAMI'
 
 resource userAssignedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' existing = {
-  name: userAssignedIdentityName
+  name: 'WireGaurdNVAMI'
 }
 
 // Reference existing NIC from Greenfield deployment
