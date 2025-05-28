@@ -95,14 +95,14 @@ if [[ -n "$REMOTE_SERVER_PUBLIC_KEY" ]]; then
     echo "$REMOTE_SERVER_PUBLIC_KEY" | sudo tee /etc/wireguard/remoteserverpublickey > /dev/null
     sudo chmod 600 /etc/wireguard/remoteserverpublickey
 else
-    echo "No remote server public key found in Key Vault. Please ensure it is set up."
+    echo "No remoteserverpublickey found in Key Vault. Please ensure it is set up."
     exit 1
 fi
 
 # Try to get the server public key from Key Vault
 REMOTE_ROUTER=$(az keyvault secret show --vault-name "$KEYVAULT_NAME" --name 'remoterouter' --query value -o tsv 2>/dev/null || echo "")
 if [[ -z "$REMOTE_ROUTER" ]]; then
-    echo "No remote server found in Key Vault. Please ensure it is set up, along with the remoteserverpublickey."
+    echo "No remoterouter found in Key Vault. Please ensure it is set up. IP:PORT or FQDN:PORT"
     exit 1
 fi
 
