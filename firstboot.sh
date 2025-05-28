@@ -157,11 +157,11 @@ sudo mv "$USER_SCRIPT" "$CRON_SCRIPT"
 sudo chmod +x "$CRON_SCRIPT"
 CRON_TARGET="$CRON_SCRIPT"
 
-# Add cron job to run every 15 minutes, ensuring no duplicates
+# Add cron job to run every 5 minutes, ensuring no duplicates
 # Remove any existing cron jobs for this script
 sudo crontab -l 2>/dev/null | grep -v "$CRON_TARGET" | sudo crontab -
 # Add the new cron job
-( sudo crontab -l 2>/dev/null; echo "*/15 * * * * $CRON_TARGET" ) | sudo crontab -
+( sudo crontab -l 2>/dev/null; echo "*/5 * * * * $CRON_TARGET" ) | sudo crontab -
 
 echo "WireGuard installation and setup complete."
 
