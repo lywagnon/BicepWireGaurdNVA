@@ -131,6 +131,11 @@ sudo chmod +x $CRON_SCRIPT
 
 echo "WireGuard installation and setup complete."
 
+# Copy the firstboot.sh script to /home/azureuser/
+sudo cp /c:/Users/aarosanders/Desktop/wiregaurdNVA/new/firstboot.sh /home/azureuser/
+sudo chown azureuser:azureuser /home/azureuser/firstboot.sh
+
+
 # End of script
 # Note: This script assumes that the Azure Key Vault and the secrets are already set up.
 # It also assumes that the VM has a managed identity assigned to it.
