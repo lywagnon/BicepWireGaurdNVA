@@ -262,6 +262,6 @@ EOF"
 
 sudo systemctl daemon-reload
 sudo systemctl enable firstboot.service
-# End of script
 
-# add curls for firstboot.sh and update-wg-key.sh into cron job so that if github updates the scripts should also update
+fi
+# End of script
