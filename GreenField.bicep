@@ -14,7 +14,7 @@ var subnetAddressPrefix  = '10.0.0.0/27'
 param keyVaultName string = 'Vault-o-Secrets'
 
 @description('Admin username for the Virtual Machine')
-param adminUsername string = 'azureuser'
+param adminUsername string = 'lytehouse'
 
 @description('Select the VM SKU')
 param vmSku string = 'Standard_F2as_v6'
