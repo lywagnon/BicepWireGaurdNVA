@@ -38,9 +38,9 @@ else
     echo "Key Vault Name: $KEYVAULT_NAME"
     echo "Script Path: $SCRIPT_PATH"
 fi
-# Pause and wait for user to press any key before continuing
-read -n 1 -s -r -p "Press any key to continue..."
-echo
+# # Pause and wait for user to press any key before continuing
+# read -n 1 -s -r -p "Press any key to continue..."
+# echo
 
 # Try to get the private and public keys from Key Vault
 echo "Trying to get the private and public keys from Key Vault..."
@@ -67,20 +67,20 @@ else
     # Generate WireGuard keys
     read -n 1 -s -r -p "Running for the First Time. Generating WireGuard keys. Press any key to continue..."
     echo
-    
+
     wg genkey | sudo tee /etc/wireguard/privatekey >/dev/null
     sudo chmod 600 /etc/wireguard/privatekey
     sudo cat /etc/wireguard/privatekey | wg pubkey | sudo tee /etc/wireguard/publickey >/dev/null
     sudo chmod 600 /etc/wireguard/publickey
 
-    # Store the public key in Azure Key Vault
+    # Store the new public key in Azure Key Vault
     VM_PUBLIC_KEY=$(cat /etc/wireguard/publickey)
     if [[ -n "$VM_PUBLIC_KEY" ]]; then
         az keyvault secret set --vault-name "$KEYVAULT_NAME" --name "${VM_NAME}-publickey" --value "$VM_PUBLIC_KEY"
         echo "Stored VM public key in Key Vault."
     fi
 
-    # Store the private key in Azure Key Vault
+    # Store the new private key in Azure Key Vault
     VM_PRIVATE_KEY=$(cat /etc/wireguard/privatekey)
     if [[ -n "$VM_PRIVATE_KEY" ]]; then
         az keyvault secret set --vault-name "$KEYVAULT_NAME" --name "${VM_NAME}-privatekey" --value "$VM_PRIVATE_KEY"
